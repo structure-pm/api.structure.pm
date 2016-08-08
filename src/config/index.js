@@ -2,8 +2,9 @@ import path from 'path';
 
 const ENV = process.env.NODE_ENV || "development";
 
-export default const {
+const config = {
   logging: {
-    path: path.resolve(__dirname, '..');
+    path: path.resolve(__dirname, '..'),
   }
 }
+export default config;
