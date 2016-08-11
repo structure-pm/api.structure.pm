@@ -6,8 +6,9 @@ describe("DB connection", () => {
     let pool = db.init({
       db: {
         connectionLimit: 100,
-        host: '192.168.10.10',
-        user: 'structulocal',
+        host: 'localhost',
+        port: 33066,
+        user: 'root',
         password: '12345678',
         // database: undefined,
         debug: false,
@@ -15,5 +16,19 @@ describe("DB connection", () => {
     });
     expect(pool).to.be.ok;
     done();
+  });
+
+  it("performs a simple query", done => {
+    db.query("SELECT 1 as first, 'abc' as second")
+      .spread((rows, fields) => {
+        expect(rows.length).to.equal(1);
+        expect(rows[0].first).to.equal(1);
+        expect(rows[0].second).to.equal('abc');
+        done();
+      })
+      .catch(err => {
+        console.log(err);
+        done(err);
+      });
   })
 });

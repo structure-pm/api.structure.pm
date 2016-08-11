@@ -1,3 +1,4 @@
+import Promise from 'bluebird';
 import mysql from 'mysql';
 
 let initialized = false;
@@ -16,3 +17,22 @@ export function getConnection(callback) {
 
   return pool.getConnection(callback);
 }
+
+export function query(...args) {
+  if (!initialized) throw new Error("DB Connection must be initialized before use.");
+
+  return new Promise((resolve, reject) => {
+
+    function callback(err, rows, fields) {
+      if (err) return reject(err);
+      return resolve([rows, fields]);
+    }
+
+    let queryArgs = args.concat(callback);
+    pool.query.apply(pool, queryArgs);
+  })
+}
+
+export const prefix = (process.env.NODE_ENV === 'production')
+  ? 'structu'
+  : 'structudev';
