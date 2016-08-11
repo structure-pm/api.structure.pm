@@ -1,24 +1,24 @@
 import restify from 'restify';
-import logger from './logger';
 import scanRouter from './routes/scan';
+import createLogger from './logger';
+import config from './config';
 
 
 const PORT = process.env.PORT || 8080;
 
-function ping(req, res, next) {
-  res.send("pong");
-}
-
-var server = restify.createServer({
+const logger = createLogger(config);
+let server = restify.createServer({
   name: "api.structure.pm",
   log: logger
 });
 
 
-server.get('/', ping);
+server.get('/', function(req, res, next) {
+  res.send("pong");
+});
 
 // Set up routes for the various services
-scanRouter(server);
+scanRouter(server, config);
 
 
 server.listen(PORT, function() {
