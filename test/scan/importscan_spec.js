@@ -13,12 +13,14 @@ describe("ImportScan service", () => {
   describe("importScan", () => {
     it("creates an unknownAccount object when an account's asset is not found", done => {
       let fired = false;
+      // Mocked Repos
       const AccountAssetRepo = {
         getAssetByAccountNumber(an) { fired = true; return Promise.resolve(null); }
       };
       const UnknownAccountsRepo = {
         create(data) { return Promise.resolve({id: 123})},
       };
+      
       ImportScan.repository('AccountAsset', AccountAssetRepo);
       ImportScan.repository('UnknownAccounts', UnknownAccountsRepo);
       ImportScan.importScan({

@@ -2,6 +2,7 @@ import restify from 'restify';
 import scanRouter from './routes/scan';
 import createLogger from './logger';
 import config from './config';
+import {init as dbInit} from './db';
 
 
 const PORT = process.env.PORT || 8080;
@@ -12,17 +13,23 @@ let server = restify.createServer({
   log: logger
 });
 
+const pool = dbInit(config);
 
+// =============================================================================
+// ==== ROUTES =================================================================
+// =============================================================================
 server.get('/', function(req, res, next) {
   res.send("pong");
 });
 
 // Set up routes for the various services
 scanRouter(server, config);
-
+// -----------------------------------------------------------------------------
 
 server.listen(PORT, function() {
   logger.info('%s listening at %s', server.name, server.url);
 }).on('error', function (e) {
 	logger.error('SERVER ERROR', e);
+}).on('close', function() {
+  pool.end(err => logger.error("CONNECTION POOL CLOSING ERROR", err));
 });
