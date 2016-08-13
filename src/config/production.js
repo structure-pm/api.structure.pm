@@ -1,4 +1,5 @@
 const config = {
+  port: 8080,
   db: {
     connectionLimit: 100,
     host: 'localhost',

@@ -5,7 +5,7 @@ import config from './config';
 import {init as dbInit} from './db';
 
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || config.port || 8080;
 
 const logger = createLogger(config);
 let server = restify.createServer({

@@ -1,4 +1,5 @@
 const config = {
+  port: 8081,
   dbPrefix: 'structudev',
   db: {
     connectionLimit: 100,
