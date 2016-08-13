@@ -3,13 +3,25 @@ import mysql from 'mysql';
 
 let initialized = false;
 let pool = null;
+let prefix = null;
 
-export function init(config) {
-  if (initialized) return pool;
+export function init(config, options) {
+  if (initialized && !options.force) return pool;
 
+  prefix = config.dbPrefix;
   pool =    mysql.createPool(config.db);
   initialized = true;
   return pool;
+}
+
+export function end() {
+  return new Promise((resolve, reject) => {
+    if (!initialized) return resolve();
+    pool.end(err => {
+      if (err) return reject(err);
+      return resolve();
+    });
+  });
 }
 
 export function getConnection(callback) {
@@ -33,6 +45,7 @@ export function query(...args) {
   })
 }
 
-export const prefix = (process.env.NODE_ENV === 'production')
-  ? 'structu'
-  : 'structudev';
+export function getPrefix() {
+  if (!initialized) throw new Error("DB Connection must be initialized before use.");
+  return prefix;
+}

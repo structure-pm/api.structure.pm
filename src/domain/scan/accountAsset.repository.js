@@ -1,11 +1,34 @@
-import Promise from 'bluebird';
+import _ from 'lodash';
+import * as db from '../../db';
 
 
 const AccountAssetRepository = {
-  getAssetByAccountNumber(accountNumber) {
-    return Promise.resolve(1);
+  findByAccountNumber(accountNumber, vendorID) {
+    const accountAssetTable = `${db.getPrefix()}_imports.imported_account_asset`;
+    const query = `
+      SELECT *
+      FROM ${accountAssetTable}
+      WHERE accountNumber=? and vendorID=?`;
+
+    return db.query(query, [accountNumber, vendorID]);
   },
+
+  create(scanData) {
+    const accountAssetTable = `${db.getPrefix()}_imports.imported_account_asset`;
+    const insertFields = ['accountNumber', 'vendorID', 'expenseID', 'assetType', 'assetID', 'modifiedAt'];
+    const values = _.pick(scanData, insertFields);
+    const query = `
+      INSERT INTO ${accountAssetTable} (
+        ${insertFields.join(',')}
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?
+      ); `;
+
+    return db.query(query, values);
+  }
 }
 
-
-export default AccountAssetRepository;
+export default function createAccountAsset() {
+  let repo = Object.create(AccountAssetRepository);
+  return repo;
+}

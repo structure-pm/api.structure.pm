@@ -21,11 +21,11 @@ if (!fileExistsSync(defaultConfigFile)) {
 }
 
 
-const defaultConfig = require(defaultConfigFile);
+const defaultConfig = require(defaultConfigFile).default;
 config = Object.assign({}, defaultConfig);
 
 if (fileExistsSync(envConfigFile)) {
-  let envConfig = require(envConfigFile);
+  let envConfig = require(envConfigFile).default;
   config = Object.assign(config, envConfig);
 }
 

@@ -1,13 +1,8 @@
 import {expect} from 'chai';
-import ImportScan from '../../src/domain/scan/importScan.service';
+import ImportScanService from '../../src/domain/scan/importScan.service';
 
 describe("ImportScan service", () => {
-  describe("repository", () => {
-    it("sets an aribitrary repo", () => {
-      ImportScan.repository('testRepo', 123);
-      expect(ImportScan.repository('testRepo')).to.equal(123);
-    });
-  });
+
 
 
   describe("importScan", () => {
@@ -15,16 +10,22 @@ describe("ImportScan service", () => {
       let fired = false;
       // Mocked Repos
       const AccountAssetRepo = {
-        getAssetByAccountNumber(an) { fired = true; return Promise.resolve(null); }
+        getAssetByAccountNumber(an,vid) { fired = true; return Promise.resolve(null); }
       };
       const UnknownAccountsRepo = {
         create(data) { return Promise.resolve({id: 123})},
       };
-      
-      ImportScan.repository('AccountAsset', AccountAssetRepo);
-      ImportScan.repository('UnknownAccounts', UnknownAccountsRepo);
+
+      let ImportScan = ImportScanService();
+
+      ImportScan.repositories.AccountAssets = AccountAssetRepo;
+      ImportScan.repositories.UnknownAccounts = UnknownAccountsRepo;
       ImportScan.importScan({
-        AccountNumber: "abc"
+        AccountNumber: "abc",
+        CreditorNumber: 1,
+        CurrentAmount: 123,
+        TotalAmount: 123,
+        DueDate: '2016-12-14'
       })
       .then(results => {
         expect(fired).to.be.ok;
@@ -32,6 +33,39 @@ describe("ImportScan service", () => {
         expect(results.data.unknownAccountId).to.equal(123);
         done();
       }).catch(done);
+    });
+
+    it("Creates a bill from a scan", done=> {
+      let fired = false;
+      let billID = 3;
+      const AccountAssetRepo = {
+        getAssetByAccountNumber(an, vid) {return Promise.resolve({
+          accountNumber: 'abc',
+          vendorID: 1,
+          expenseID: 1,
+          assetType: 'location',
+          assetID: 'testlocation',
+        })}
+      };
+      const BillRepo = {
+        create(billData) { fired = true; return Promise.resolve({id: billID})}
+      }
+      let ImportScan = ImportScanService();
+      ImportScan.repositories.AccountAssets = AccountAssetRepo;
+      ImportScan.repositories.Bills = BillRepo;
+      ImportScan.importScan({
+        AccountNumber: "abc",
+        CreditorNumber: 1,
+        CurrentAmount: 123,
+        TotalAmount: 123,
+        DueDate: '2016-12-14'
+      })
+        .then(results => {
+          expect(fired).to.be.ok;
+          expect(results.result).to.equal(ImportScan.RESULT_BILL_CREATED);
+          expect(results.data.id).to.equal(billID);
+          done();
+        }).catch(done);
     });
 
   });

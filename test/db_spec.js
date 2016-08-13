@@ -2,6 +2,12 @@ import {expect} from 'chai';
 import * as db from '../src/db';
 
 describe("DB connection", () => {
+  after(done => {
+    db.end()
+      .then(() => done())
+      .catch(done);
+  });
+  
   it("initializes a connection pool",done => {
     let pool = db.init({
       db: {

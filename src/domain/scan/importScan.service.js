@@ -1,11 +1,11 @@
-import AccountAssetRepository from './accountAsset.repository';
-import UnknownAccountsRepository from './unknownAccounts.repository';
-import BillRepository from '../expenses/bill.repository';
+import Promise from 'bluebird';
+import createAccountAssetRepository from './accountAsset.repository';
+import createUnknownAccountsRepository from './unknownAccounts.repository';
+import createBillRepository from '../expenses/bill.repository';
 
 const RESULT_UNKNOWN_ACCOUNT = 'RESULT_UNKNOWN_ACCOUNT';
 const RESULT_BILL_CREATED = "RESULT_BILL_CREATED";
 
-let Repos = {};
 /**
  * {
  *   "CustomerName": "Joshua Lyndley",
@@ -21,58 +21,100 @@ let Repos = {};
  *   "Result": 0
  * }
  */
-const ImportScan = {
-  RESULT_UNKNOWN_ACCOUNT: RESULT_UNKNOWN_ACCOUNT,
-  RESULT_BILL_CREATED: RESULT_BILL_CREATED,
+
+const ImportScanService = {
+  RESULT_UNKNOWN_ACCOUNT,
+  RESULT_BILL_CREATED,
+
 
   importScan(scanData) {
     scanData = scanData || {};
 
-    // Is the account in the system?
-    return Repos.AccountAsset.getAssetByAccountNumber(scanData.AccountNumber)
+    let {AccountAssets, UnknownAccounts} = this.repositories;
+
+    return Promise.try(() => {
+      this.validateScanData(scanData);
+    })
+      .then(() => AccountAssets.getAssetByAccountNumber(scanData.AccountNumber, scanData.CreditorNumber))
       .then(asset => {
         if (!asset) {
           // save the data in the unknownAccounts table
-          return Repos.UnknownAccounts.create({
+          return UnknownAccounts.create({
             accountNumber: scanData.accountNumber,
+            vendorID: scanData.CreditorNumber,
             scanData: scanData
           })
           .then(unknownAccount => ({
-            result: ImportScan.RESULT_UNKNOWN_ACCOUNT,
+            result: this.RESULT_UNKNOWN_ACCOUNT,
             message: "Unknown AccountNumber queued for review",
             data: {unknownAccountId: unknownAccount.id}
           }));
 
         } else {
           // Create an expense entry for the scanned data
-          return Repos.Bill.create({
-            // ?????
-          })
-            .then(bill => ({
-            result: ImportScan.RESULT_BILL_CREATED,
+          return this.createBillFromScan(scanData, asset)
+          .then(bill => ({
+            result: this.RESULT_BILL_CREATED,
             message: "Bill Created",
-            data: {entryID: bill.entryID}
+            data: bill
           }));
         }
-      })
+      });
+
   },
 
-  repository(repoName, repo) {
-    if (!repo) return Repos[repoName];
-    return Repos[repoName] = repo;
+  /**
+   * validateScanData
+   */
+  validateScanData(scanData) {
+    const requiredFields = ['CreditorNumber', 'AccountNumber', 'CurrentAmount', 'TotalAmount', 'DueDate', ];
+
+    let missingFields = requiredFields.reduce((missing, field) => {
+      return (!scanData.hasOwnProperty(field))
+        ? missing.concat(field)
+        : missing;
+    }, []);
+
+    if (missingFields.length) {
+      throw new Error(`Missing expected fields in scaned data: [${missingFields.join(', ')}]`)
+    }
+
+  },
+
+  /**
+   * createBillFromScan
+   *
+   * Creates a bill using data scanned from the original bill and the cached
+   * asset data
+   */
+  createBillFromScan(scanData, assetData) {
+    const billData = {
+      managerID : (assetData.assetType === 'manager') ? assetData.assetID  : 'NULL',
+      ownerID   : (assetData.assetType === 'owner') ? assetData.assetID    : 'NULL',
+      locationID: (assetData.assetType === 'location') ? assetData.assetID : 'NULL',
+      unitID    : (assetData.assetType === 'manager') ? assetData.assetID  : 'NULL',
+      createDate: new Date(),
+      dueDate: scanData.DueDate,
+      dateStamp: new Date(),
+      vendorID: assetData.vendorID,
+      expenseID: assetData.expenseID,
+      amount: scanData.CurrentAmount,
+    };
+
+    return this.repositories.Bills.create(billData);
   },
 
 };
 
-if (!Repos.AccountAsset) {
-  ImportScan.repository('AccountAsset', AccountAssetRepository);
-}
-if (!Repos.UnknownAccounts) {
-  ImportScan.repository('UnknownAccounts', UnknownAccountsRepository);
-}
-if (!Repos.Bill) {
-  ImportScan.repository('Bill', BillRepository);
-}
 
 
-export default ImportScan;
+
+export default function createImportScanService() {
+  let repo = Object.create(ImportScanService);
+  repo.repositories = {
+    Bills: createBillRepository(),
+    AccountAssets: createAccountAssetRepository(),
+    UnknownAccounts: createUnknownAccountsRepository(),
+  }
+  return repo;
+};
