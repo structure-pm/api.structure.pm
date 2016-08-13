@@ -1,5 +1,5 @@
-import createAccountAssetsRepository from './AccountAsset.repository';
-import createUnknownAccountsRepository from './UnknownAccounts.repository';
+import createAccountAssetsRepository from './accountAsset.repository';
+import createUnknownAccountsRepository from './unknownAccounts.repository';
 import createImportScanService from './importScan.service';
 
 const RESULT_ASSOCIATE_SUCCESS = 'RESULT_ASSOCIATE_SUCCESS';
