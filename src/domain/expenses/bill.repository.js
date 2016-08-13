@@ -6,7 +6,7 @@ const Bill = {
 
 
   findById(entryID) {
-    const eLedgerTable = `${db.getPrefix()}_expenses.eledger`;
+    const eLedgerTable = `${db.getPrefix()}_expenses.eLedger`;
     const query = `
       SELECT *
       FROM ${eLedgerTable}
@@ -16,6 +16,7 @@ const Bill = {
   },
 
   create(billData) {
+    const eLedgerTable = `${db.getPrefix()}_expenses.eLedger`;
     const insertFields = [
       'managerID',
       'ownerID',
@@ -28,6 +29,23 @@ const Bill = {
       'expenseID',
       'amount',
     ];
+    const values = insertFields.map(fld => billData[fld]);
+    const placeHolders = insertFields.map(fld => '?').join(',');
+    const insertQuery = `
+      INSERT INTO ${eLedgerTable} (
+        ${insertFields.join(',')}
+      ) VALUES (
+        ${placeHolders}
+      )`;
+    const selectQuery = `SELECT * FROM ${eLedgerTable} WHERE entryID=?`;
+    return db.query(insertQuery, values)
+      .then(res => {
+        if (res.insertId) {
+          return db.query(selectQuery, [res.insertId])
+        } else {
+          return res
+        }
+      });
   }
 };
 

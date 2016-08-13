@@ -22,6 +22,10 @@ server.get('/', function(req, res, next) {
   res.send("pong");
 });
 
+// Middleware
+server.use(restify.bodyParser());
+
+
 // Set up routes for the various services
 scanRouter(server, config);
 // -----------------------------------------------------------------------------
@@ -32,4 +36,10 @@ server.listen(PORT, function() {
 	logger.error('SERVER ERROR', e);
 }).on('close', function() {
   pool.end(err => logger.error("CONNECTION POOL CLOSING ERROR", err));
+}).on('InternalServer', function (req, res, err, next) {
+  logger.error("ERR!");
+  if (process.env.NODE_ENV === 'development') {
+    console.log(err.stack);
+  }
+  return next(err);
 });

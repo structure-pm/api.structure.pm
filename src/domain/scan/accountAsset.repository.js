@@ -10,7 +10,11 @@ const AccountAssetRepository = {
       FROM ${accountAssetTable}
       WHERE accountNumber=? and vendorID=?`;
 
-    return db.query(query, [accountNumber, vendorID]);
+    return db.query(query, [accountNumber, vendorID])
+      .then(res => {
+        if (res.length) return res[0]
+        return null;
+      });
   },
 
   create(scanData) {

@@ -37,12 +37,34 @@ export function query(...args) {
 
     function callback(err, rows, fields) {
       if (err) return reject(err);
-      return resolve([rows, fields]);
+      return resolve(rows);
     }
 
     let queryArgs = args.concat(callback);
     pool.query.apply(pool, queryArgs);
   })
+}
+
+export function beginTransaction() {
+  return new Promise((resolve, reject) => {
+    pool.beginTransaction(err => {
+      if (err) return reject(err);
+      return resolve();
+    })
+  })
+}
+
+export function rollback() {
+  return new Promise(resolve => pool.rollback(resolve));
+}
+
+export function commit() {
+  return new Promise((resolve, reject) => {
+    pool.commit(err => {
+      if (err) return reject(err);
+      return resolve();
+    });
+  });
 }
 
 export function getPrefix() {

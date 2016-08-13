@@ -1,3 +1,4 @@
+import moment from 'moment';
 import Promise from 'bluebird';
 import createAccountAssetRepository from './accountAsset.repository';
 import createUnknownAccountsRepository from './unknownAccounts.repository';
@@ -35,12 +36,12 @@ const ImportScanService = {
     return Promise.try(() => {
       this.validateScanData(scanData);
     })
-      .then(() => AccountAssets.getAssetByAccountNumber(scanData.AccountNumber, scanData.CreditorNumber))
+      .then(() => AccountAssets.findByAccountNumber(scanData.AccountNumber, scanData.CreditorNumber))
       .then(asset => {
         if (!asset) {
           // save the data in the unknownAccounts table
           return UnknownAccounts.create({
-            accountNumber: scanData.accountNumber,
+            accountNumber: scanData.AccountNumber,
             vendorID: scanData.CreditorNumber,
             scanData: scanData
           })
@@ -70,7 +71,7 @@ const ImportScanService = {
     const requiredFields = ['CreditorNumber', 'AccountNumber', 'CurrentAmount', 'TotalAmount', 'DueDate', ];
 
     let missingFields = requiredFields.reduce((missing, field) => {
-      return (!scanData.hasOwnProperty(field))
+      return (!scanData.hasOwnProperty(field) || !scanData[field])
         ? missing.concat(field)
         : missing;
     }, []);
@@ -92,9 +93,9 @@ const ImportScanService = {
       managerID : (assetData.assetType === 'manager') ? assetData.assetID  : 'NULL',
       ownerID   : (assetData.assetType === 'owner') ? assetData.assetID    : 'NULL',
       locationID: (assetData.assetType === 'location') ? assetData.assetID : 'NULL',
-      unitID    : (assetData.assetType === 'manager') ? assetData.assetID  : 'NULL',
+      unitID    : (assetData.assetType === 'unit') ? assetData.assetID  : 'NULL',
       createDate: new Date(),
-      dueDate: scanData.DueDate,
+      dueDate: moment(scanData.DueDate).toDate(),
       dateStamp: new Date(),
       vendorID: assetData.vendorID,
       expenseID: assetData.expenseID,

@@ -4,17 +4,19 @@ import * as db from '../../db';
 const UnknownAccount = {
   create(uaData) {
     const unknownAccountsTable = `${db.getPrefix()}_imports.imported_unknown_account`;
-    const insertFields = ['accountNumber', 'vendorID', 'scanData'];
+    const insertFields = ['accountNumber', 'vendorID', 'scanData', 'modifiedAt'];
+    const placeHolders = insertFields.map(fld => '?').join(',');
     const values = [
       uaData.accountNumber,
       uaData.vendorID,
-      JSON.stringify(uaData.scanData)
+      JSON.stringify(uaData.scanData),
+      new Date()
     ];
     const query = `
       INSERT INTO ${unknownAccountsTable} (
         ${insertFields.join(',')}
       ) VALUES (
-        ?, ?, ?
+        ${placeHolders}
       ); `;
     return db.query(query, values);
   },
