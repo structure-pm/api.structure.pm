@@ -1,4 +1,3 @@
-import restify from 'restify';
 import createUnknownAccounts from '../../domain/scan/unknownAccounts.repository';
 import createAccountAssetService from '../../domain/scan/accountAsset.service';
 import createImportScanService from '../../domain/scan/importScan.service';
@@ -7,12 +6,9 @@ export function importScan(req, res, next) {
   let importScan = createImportScanService();
   importScan.importScan(req.body)
     .then(results => {
-      res.json(results);
+      return res.json(results);
     })
-    .catch(err => {
-      console.log(err.stack);
-      next(err);
-    });
+    .catch(next);
 }
 
 
@@ -20,9 +16,9 @@ export function getUnknownAccounts(req,res,next) {
   let UnknownAccounts = createUnknownAccounts();
   UnknownAccounts.find()
     .then(accounts => {
-      res.json(accounts);
+      return res.json(accounts);
     })
-    .catch(next);
+    .catch(next)
 }
 
 export function associateUnknownAccount(req, res, next) {
@@ -34,11 +30,16 @@ export function associateUnknownAccount(req, res, next) {
   let vendor = unknownAccount.then(ua => Vendors.findById(ua.vendorID));
 
   Promise.all([unknownAccount, vendor]).spread((unknownAccount, vendor) => {
-    if (!unknownAccount) return next(restify.NotFoundError);
+    if (!unknownAccount) {
+      let err = new Error("Not Found");
+      err.status = 404;
+      return next(err);
+    }
 
     AccountAsset.associateAccount(unknownAccount, vendor, req.body.assetType, req.body.assetID)
       .then(result => {
         res.json(result);
+        return next();
       })
       .catch(next);
   })

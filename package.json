@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint src test",
-    "test": "mocha --compilers js:babel-register --recursive",
+    "test": "NODE_ENV=test mocha --compilers js:babel-register --recursive",
     "test:watch": "mocha --compilers js:babel-register --reporter min --watch",
     "test:cover": "babel-node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha",
     "coveralls": "cat ./coverage/lcov.info | coveralls",
-    "start": "nodemon --exec babel-node -- src/server.js",
+    "start": "NODE_ENV=local nodemon --exec babel-node -- src/server.js",
     "build": "babel src -d build"
   },
   "devDependencies": {
@@ -33,10 +33,12 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.4.1",
+    "body-parser": "^1.15.2",
     "bunyan": "^1.8.1",
+    "cors": "^2.7.1",
+    "express": "^4.14.0",
     "lodash": "^4.14.2",
     "moment": "^2.14.1",
-    "mysql": "^2.11.1",
-    "restify": "^4.1.1"
+    "mysql": "^2.11.1"
   }
 }

@@ -1,6 +1,10 @@
+import {Router} from 'express';
 import * as scan from './controllers/scan.controller';
 
-export default function(server) {
-  server.post('/scan', scan.importScan);
-  server.get('/scan/unknown', scan.getUnknownAccounts);
+export default function(config) {
+  let router = Router();
+  router.post('/scan', scan.importScan);
+  router.get('/scan/unknown', scan.getUnknownAccounts);
+
+  return router;
 }

@@ -1,6 +1,6 @@
-CREATE DATABASE structu_imports COLLATE utf8_unicode_ci;
+CREATE DATABASE structudev_imports COLLATE utf8_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS structu_imports.imported_account_asset (
+CREATE TABLE IF NOT EXISTS structudev_imports.imported_account_asset (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   accountNumber VARCHAR(255) NOT NULL,
   vendorID INT NOT NULL,
@@ -12,11 +12,11 @@ CREATE TABLE IF NOT EXISTS structu_imports.imported_account_asset (
 );
 
 
-ALTER TABLE structu_imports.imported_account_asset
+ALTER TABLE structudev_imports.imported_account_asset
 ADD UNIQUE `idx_accountasset_accountNumber`(`vendorID`, `accountNumber`);
 
 
-CREATE TABLE IF NOT EXISTS structu_imports.imported_unknown_account (
+CREATE TABLE IF NOT EXISTS structudev_imports.imported_unknown_account (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   accountNumber VARCHAR(255) NOT NULL,
   vendorID INT NOT NULL,
@@ -26,5 +26,5 @@ CREATE TABLE IF NOT EXISTS structu_imports.imported_unknown_account (
 );
 
 
-ALTER TABLE structu_imports.imported_unknown_account
+ALTER TABLE structudev_imports.imported_unknown_account
 ADD UNIQUE `idx_unknownaccount_accountNumber`(`vendorID`, `accountNumber`);

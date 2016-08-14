@@ -1,45 +1,83 @@
-import restify from 'restify';
+import express from 'express';
+import http from 'http';
+import https from 'https';
+import bodyParser from 'body-parser';
+import cors from 'cors';
 import scanRouter from './routes/scan';
 import createLogger from './logger';
 import config from './config';
 import {init as dbInit} from './db';
+import fs from 'fs';
+import path from 'path';
 
 
+
+process.env.NODE_ENV = process.env.NODE_ENV || 'local';
 const PORT = process.env.PORT || config.port || 8080;
 
-const logger = createLogger(config);
-let server = restify.createServer({
-  name: "api.structure.pm",
-  log: logger
-});
+const logger = createLogger(config.log);
 
+let app = express();
 const pool = dbInit(config);
 
 // =============================================================================
 // ==== ROUTES =================================================================
 // =============================================================================
-server.get('/', function(req, res, next) {
+app.get('/', function(req, res, next) {
   res.send("pong");
+  next()
 });
 
 // Middleware
-server.use(restify.bodyParser());
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
+app.use(cors({
+    origins: ['*'],   // defaults to ['*']
+    credentials: false,                 // defaults to false
+}));
+
 
 
 // Set up routes for the various services
-scanRouter(server, config);
+app.use(scanRouter(config));
 // -----------------------------------------------------------------------------
 
-server.listen(PORT, function() {
-  logger.info('%s listening at %s', server.name, server.url);
-}).on('error', function (e) {
-	logger.error('SERVER ERROR', e);
-}).on('close', function() {
-  pool.end(err => logger.error("CONNECTION POOL CLOSING ERROR", err));
-}).on('InternalServer', function (req, res, err, next) {
-  logger.error("ERR!");
-  if (process.env.NODE_ENV === 'development') {
+// =============================================================================
+// ==== ERROR HANDLING =========================================================
+// =============================================================================
+app.use(function(err, req, res, next) {
+  const status = err.status || err.statusCode || 500;
+
+  let retErr = { message: err.message };
+  if (process.env.NODE_ENV !== 'production') retErr.stack = err.stack;
+
+  if (process.env.NODE_ENV !== 'production') {
     console.log(err.stack);
   }
-  return next(err);
+
+  res.status(status).json(retErr)
+})
+// -----------------------------------------------------------------------------
+
+
+// =============================================================================
+// ==== OFF WE GO ==============================================================
+// =============================================================================
+let server;
+if (process.env.NODE_ENV === 'local') {
+  const httpsOptions = {
+    key: fs.readFileSync(path.resolve(__dirname, '..', 'dev/key.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, '..', 'dev/ssl.crt'))
+  }
+  server = https.createServer(httpsOptions, app);
+} else {
+  server = http.createServer(app);
+}
+
+
+server.listen(PORT, () => {
+  logger.info(`API listening on port ${PORT}`);
+}).on('close', () => {
+  pool.end(err => logger.error("CONNECTION POOL CLOSING ERROR", err));
 });
+// -----------------------------------------------------------------------------

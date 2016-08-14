@@ -32,7 +32,6 @@ const UnknownAccount = {
     const query = `
       SELECT * FROM ${unknownAccountsTable}; `;
     return db.query(query)
-      .then(res => res[0])
       .map(this.rawAccountToObject);
   },
 
