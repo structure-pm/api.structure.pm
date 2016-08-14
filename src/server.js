@@ -3,12 +3,13 @@ import http from 'http';
 import https from 'https';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import scanRouter from './routes/scan';
 import createLogger from './logger';
 import config from './config';
 import {init as dbInit} from './db';
 import fs from 'fs';
 import path from 'path';
+import scanRouter from './routes/scan';
+import propertiesRouter from './routes/properties';
 
 
 
@@ -25,7 +26,6 @@ const pool = dbInit(config);
 // =============================================================================
 app.get('/', function(req, res, next) {
   res.send("pong");
-  next()
 });
 
 // Middleware
@@ -40,6 +40,7 @@ app.use(cors({
 
 // Set up routes for the various services
 app.use(scanRouter(config));
+app.use(propertiesRouter(config));
 // -----------------------------------------------------------------------------
 
 // =============================================================================
