@@ -27,11 +27,24 @@ const UnknownAccount = {
    * SELECT all from the unknownaccounts table
    * For each returned account, parse the JSON text stored in field `scanData`
    */
-  find() {
+  find(where, options) {
+    options = options || {};
     const unknownAccountsTable = `${db.getPrefix()}_imports.imported_unknown_account`;
+    const vendorTable = `${db.getPrefix()}_expenses.vendor`;
+    const contactTable = `${db.getPrefix()}_assets.contacts`;
+
     const query = `
       SELECT * FROM ${unknownAccountsTable}; `;
-    return db.query(query)
+    const queryWithVendor = `
+      SELECT
+        ua.*, v.expenseID, c.*,
+        c.cname as vendorName
+      FROM ${unknownAccountsTable} ua
+        LEFT JOIN ${vendorTable} v on v.vendorID=ua.vendorID
+        LEFT JOIN ${contactTable} c on c.contactID=v.contactID `;
+
+    let queryToUse = (options.includeVendor) ? queryWithVendor : query;
+    return db.query(queryToUse)
       .map(this.rawAccountToObject);
   },
 

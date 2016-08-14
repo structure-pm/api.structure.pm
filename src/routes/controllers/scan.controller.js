@@ -13,8 +13,10 @@ export function importScan(req, res, next) {
 
 
 export function getUnknownAccounts(req,res,next) {
-  let UnknownAccounts = createUnknownAccounts();
-  UnknownAccounts.find()
+  const UnknownAccounts = createUnknownAccounts();
+  const includeVendor = req.query.includeVendor;
+
+  UnknownAccounts.find({}, {includeVendor})
     .then(accounts => {
       return res.json(accounts);
     })
@@ -26,8 +28,11 @@ export function associateUnknownAccount(req, res, next) {
   let Vendors = createVendor();
   let AccountAsset = createAccountAssetService();
 
+
   let unknownAccount = UnknownAccounts.findById(req.params.unknownAccountID);
   let vendor = unknownAccount.then(ua => Vendors.findById(ua.vendorID));
+
+
 
   Promise.all([unknownAccount, vendor]).spread((unknownAccount, vendor) => {
     if (!unknownAccount) {
