@@ -32,14 +32,22 @@ const UnknownAccount = {
    * SELECT all from the unknownaccounts table
    * For each returned account, parse the JSON text stored in field `scanData`
    */
-  find(where, options) {
+  find(where = {}, options= {}) {
     options = options || {};
     const unknownAccountsTable = `${db.getPrefix()}_imports.imported_unknown_account`;
     const vendorTable = `${db.getPrefix()}_expenses.vendor`;
     const contactTable = `${db.getPrefix()}_assets.contacts`;
 
+    if (!where.hasOwnProperty('deleted')) {
+      where.deleted = 0;
+    }
+    const whereClauses = Object.keys(where).map(key => `${key}=?`)
+    const whereClause = (whereClauses.length) ? 'WHERE ' + whereClauses.join(' AND ') : '';
+    const values = Object.keys(where).map(key => where[key]);
+
+
     const query = `
-      SELECT * FROM ${unknownAccountsTable} WHERE deleted=0 `;
+      SELECT * FROM ${unknownAccountsTable} ${whereClause} `;
     const queryWithVendor = `
       SELECT
         ua.*, v.expenseID, c.*,
@@ -47,10 +55,10 @@ const UnknownAccount = {
       FROM ${unknownAccountsTable} ua
         LEFT JOIN ${vendorTable} v on v.vendorID=ua.vendorID
         LEFT JOIN ${contactTable} c on c.contactID=v.contactID
-      WHERE deleted = 0 `;
+      ${whereClause}`;
 
     let queryToUse = (options.includeVendor) ? queryWithVendor : query;
-    return db.query(queryToUse,options)
+    return db.query(queryToUse,values, options)
       .map(this.rawAccountToObject);
   },
 
