@@ -31,10 +31,7 @@ app.get('/', function(req, res, next) {
 // Middleware
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
-app.use(cors({
-    origins: ['*'],   // defaults to ['*']
-    credentials: false,                 // defaults to false
-}));
+app.use(cors());
 
 
 
@@ -50,7 +47,8 @@ app.use(function(err, req, res, next) {
   const status = err.status || err.statusCode || 500;
 
   let retErr = { message: err.message };
-  if (process.env.NODE_ENV !== 'production') retErr.stack = err.stack;
+  // if (process.env.NODE_ENV !== 'production')
+  retErr.stack = err.stack;
 
   if (process.env.NODE_ENV !== 'production') {
     console.log(err.stack);
