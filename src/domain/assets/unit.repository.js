@@ -1,26 +1,26 @@
 import * as db from '../../db';
 
-const unitTable = `${db.getPrefix()}_assets.unit`;
-const locationTable = `${db.getPrefix()}_assets.location`;
-const ownerTable = `${db.getPrefix()}_assets.owner`;
 
 
 const Unit = {
-  find(ands, option) {
+  findById(id, options = {}) {
+    return this.find({unitID: id}, options)
+      .then(units => (units && units.length) ? units[0] : null);
+  },
 
-    let where_clause = [];
-    let values = [];
-    for (key in ands) {
-      where_clause.push(`${key}=?`);
-      values.push(ands[key]);
-    }
+  find(where={}, options={}) {
+    const unitTable = `${db.getPrefix()}_assets.unit`;
+    const locationTable = `${db.getPrefix()}_assets.location`;
+    const ownerTable = `${db.getPrefix()}_assets.owner`;
 
+    const whereClauses = Object.keys(where).map(key => `${key}=?`)
     if (!options.includeDNM) {
-      where_clause.push("location.shortHand NOT LIKE '%DNM%'")
+      whereClauses.push("location.shortHand NOT LIKE '%DNM%'");
     }
-    where_clause = (where_clause.length) ? "WHERE " + where_clause.joins(' AND ') : '';
+    const whereClause = (whereClauses.length) ? 'WHERE ' + whereClauses.join(' AND ') : '';
+    const values = Object.keys(where).map(key => where[key]);
 
-    orderby_clause = '';
+
 
     const query = `
       SELECT
@@ -28,6 +28,7 @@ const Unit = {
         unit.locationID,
         unit.streetNum,
         unit.suiteNum,
+        COALESCE(unit.suiteNum, unit.streetNum) as unitName,
         COALESCE(unit.beds, location.beds) as beds,
         COALESCE(unit.baths, location.baths) as baths,
         COALESCE(unit.halfBaths, location.halfBaths) as halfBaths,
@@ -81,8 +82,13 @@ const Unit = {
       FROM ${unitTable}
         LEFT JOIN ${locationTable} on location.locationID = unit.locationID
         LEFT JOIN ${ownerTable}  on owner.ownerID = location.ownerID
-      ${where_clause}
-      ${orderby_clause}; `;
+      ${whereClause}
+      ORDER BY COALESCE(unit.suiteNum, unit.streetNum); `;
     return db.query(query, values);
   }
+}
+
+export default function createUnitRepository() {
+  let repo = Object.create(Unit);
+  return repo;
 }

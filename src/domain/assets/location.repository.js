@@ -8,30 +8,32 @@ const Location = {
   findByManagerID(managerID, options) {
     return this.find({'owner.managerID': managerID}, options)
   },
+  findById(id, options) {
+    return this.find({locationID: id}, options)
+      .then(locs => (locs && locs.length) ? locs[0] : null)
+  },
 
-  find(ands, options) {
+  find(where={}, options={}) {
     const locationTable = `${db.getPrefix()}_assets.location`;
     const ownerTable = `${db.getPrefix()}_assets.owner`;
-    let where_clause = [];
-    let values = [];
-    for (key in ands) {
-      where_clause.push(`${key}=?`);
-      values.push(ands[key]);
-    }
-
+    const whereClauses = Object.keys(where).map(key => `${key}=?`)
     if (!options.includeDNM) {
-      where_clause.push("location.shortHand NOT LIKE '%DNM%'")
+      whereClauses.push("location.shortHand NOT LIKE '%DNM%'");
     }
-    where_clause = where_clause.joins(' AND ');
+    const whereClause = (whereClauses.length) ? 'WHERE ' + whereClauses.join(' AND ') : '';
+    const values = Object.keys(where).map(key => where[key]);
+
 
     const query = `
       SELECT
         location.*,
+        COALESCE(location.shortHand, location.locationID) as locationName,
         owner.managedBy
       FROM ${locationTable}
         LEFT JOIN ${ownerTable}  on owner.ownerID = location.ownerID
-      WHERE
-        ${where_clause}; `;
+      ${whereClause}
+      ORDER BY COALESCE(location.shortHand, location.locationID)`;
+    console.log(query);
     return db.query(query, values);
 
   }

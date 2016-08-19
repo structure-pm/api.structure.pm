@@ -1,6 +1,8 @@
+import Promise from 'bluebird';
 import createUnknownAccounts from '../../domain/scan/unknownAccounts.repository';
 import createAccountAssetService from '../../domain/scan/accountAsset.service';
 import createImportScanService from '../../domain/scan/importScan.service';
+import createVendorRepository from '../../domain/expenses/vendor.repository';
 
 export function importScan(req, res, next) {
   let importScan = createImportScanService();
@@ -25,12 +27,15 @@ export function getUnknownAccounts(req,res,next) {
 
 export function associateUnknownAccount(req, res, next) {
   let UnknownAccounts = createUnknownAccounts();
-  let Vendors = createVendor();
+  let Vendors = createVendorRepository();
   let AccountAsset = createAccountAssetService();
 
 
   let unknownAccount = UnknownAccounts.findById(req.params.unknownAccountID);
-  let vendor = unknownAccount.then(ua => Vendors.findById(ua.vendorID));
+  let vendor = unknownAccount.then(ua => {
+    console.log("SEEKING VENDOR", ua.vendorID)
+    return Vendors.findById(ua.vendorID)
+  });
 
 
 
@@ -41,11 +46,16 @@ export function associateUnknownAccount(req, res, next) {
       return next(err);
     }
 
-    AccountAsset.associateAccount(unknownAccount, vendor, req.body.assetType, req.body.assetID)
+    if (!vendor) {
+      let err = new Error(`VendorID ${unknownAccount.vendorID} was not found`);
+      err.status = 400;
+      return next(err);
+    }
+
+    return AccountAsset.associateAccount(unknownAccount, vendor, req.body.assetType, req.body.assetID)
       .then(result => {
         res.json(result);
-        return next();
       })
-      .catch(next);
   })
+  .catch(next);
 }

@@ -3,6 +3,8 @@ import Promise from 'bluebird';
 import createAccountAssetRepository from './accountAsset.repository';
 import createUnknownAccountsRepository from './unknownAccounts.repository';
 import createBillRepository from '../expenses/bill.repository';
+import createLocationRepository from '../assets/location.repository';
+import createUnitRepository from '../assets/unit.repository';
 
 const RESULT_UNKNOWN_ACCOUNT = 'RESULT_UNKNOWN_ACCOUNT';
 const RESULT_BILL_CREATED = "RESULT_BILL_CREATED";
@@ -88,21 +90,54 @@ const ImportScanService = {
    * Creates a bill using data scanned from the original bill and the cached
    * asset data
    */
-  createBillFromScan(scanData, assetData) {
-    const billData = {
-      managerID : (assetData.assetType === 'manager') ? assetData.assetID  : 'NULL',
-      ownerID   : (assetData.assetType === 'owner') ? assetData.assetID    : 'NULL',
-      locationID: (assetData.assetType === 'location') ? assetData.assetID : 'NULL',
-      unitID    : (assetData.assetType === 'unit') ? assetData.assetID  : 'NULL',
-      createDate: new Date(),
-      dueDate: moment(scanData.DueDate).toDate(),
-      dateStamp: new Date(),
-      vendorID: assetData.vendorID,
-      expenseID: assetData.expenseID,
-      amount: scanData.CurrentAmount,
-    };
+  createBillFromScan(scanData, assetData, options) {
+    return Promise.try(() => {
+      let ownerID;
+      switch (assetData.assetType) {
+        case 'manager':
+          ownerID = 'NULL';
+          break;
+        case 'owner':
+          ownerID = assetData.assetID;
+          break;
+        case 'location':
+          let Locations = createLocationRepository();
+          ownerID = Locations.findById(assetData.assetID).then(loc => {
+            if (!loc) return Promise.reject(new Error(`Location ${assetData.assetID} not found`))
+            return loc.ownerID;
+          });
+          break;
+        case 'unit':
+          let Units = createUnitRepository();
+          ownerID = Units.findById(assetData.assetID).then(unit => {
+            if (!unit) return Promise.reject(new Error(`Unit ${assetData.assetID} not found`))
+            return unit.ownerID;
+          })
+          break;
+        default:
+          return Promise.reject(new Error(`Unrecognized assetType '${assetData.assetType}'`));
+      }
 
-    return this.repositories.Bills.create(billData);
+      return ownerID;
+    })
+    .then(ownerID => {
+      const billData = {
+        ownerID   : ownerID,
+        managerID : (assetData.assetType === 'manager') ? assetData.assetID  : null,
+        locationID: (assetData.assetType === 'location') ? assetData.assetID : null,
+        unitID    : (assetData.assetType === 'unit') ? assetData.assetID  : null,
+        createDate: new Date(),
+        dueDate: moment(scanData.DueDate).toDate(),
+        dateStamp: new Date(),
+        vendorID: assetData.vendorID,
+        expenseID: assetData.expenseID,
+        amount: scanData.CurrentAmount,
+      };
+      console.log("creating bill", billData, assetData);
+      return this.repositories.Bills.create(billData, options);
+    })
+
+
   },
 
 };

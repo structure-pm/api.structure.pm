@@ -17,18 +17,23 @@ const AccountAssetRepository = {
       });
   },
 
-  create(scanData) {
+  create(scanData, options) {
+    options = options || {};
     const accountAssetTable = `${db.getPrefix()}_imports.imported_account_asset`;
     const insertFields = ['accountNumber', 'vendorID', 'expenseID', 'assetType', 'assetID', 'modifiedAt'];
-    const values = _.pick(scanData, insertFields);
-    const query = `
+    const values = insertFields.map(fld => scanData[fld]);
+    const placeHolders = insertFields.map(fld => '?').join(',');
+    const insertQuery = `
       INSERT INTO ${accountAssetTable} (
         ${insertFields.join(',')}
       ) VALUES (
-        ?, ?, ?, ?, ?, ?
+        ${placeHolders}
       ); `;
+    const selectQuery = `SELECT * FROM ${accountAssetTable} where id = ? `;
 
-    return db.query(query, values);
+    return db.query(insertQuery, values, options)
+      .then(res => db.query(selectQuery, [res.insertId]))
+      .then(rows => (rows && rows.length) ? rows[0] : null);
   }
 }
 

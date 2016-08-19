@@ -10,7 +10,7 @@ describe("ImportScan service", () => {
       let fired = false;
       // Mocked Repos
       const AccountAssetRepo = {
-        getAssetByAccountNumber(an,vid) { fired = true; return Promise.resolve(null); }
+        findByAccountNumber(an,vid) { fired = true; return Promise.resolve(null); }
       };
       const UnknownAccountsRepo = {
         create(data) { return Promise.resolve({id: 123})},
@@ -39,7 +39,7 @@ describe("ImportScan service", () => {
       let fired = false;
       let billID = 3;
       const AccountAssetRepo = {
-        getAssetByAccountNumber(an, vid) {return Promise.resolve({
+        findByAccountNumber(an, vid) {return Promise.resolve({
           accountNumber: 'abc',
           vendorID: 1,
           expenseID: 1,

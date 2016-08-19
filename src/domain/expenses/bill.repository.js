@@ -15,7 +15,7 @@ const Bill = {
       .spread((rows, meta) => (rows.length) ? rows[0] : null )
   },
 
-  create(billData) {
+  create(billData, options) {
     const eLedgerTable = `${db.getPrefix()}_expenses.eLedger`;
     const insertFields = [
       'managerID',
@@ -38,7 +38,7 @@ const Bill = {
         ${placeHolders}
       )`;
     const selectQuery = `SELECT * FROM ${eLedgerTable} WHERE entryID=?`;
-    return db.query(insertQuery, values)
+    return db.query(insertQuery, values, options)
       .then(res => {
         if (res.insertId) {
           return db.query(selectQuery, [res.insertId])

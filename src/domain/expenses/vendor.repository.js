@@ -3,6 +3,9 @@ import * as db from '../../db';
 
 const Vendor = {
   findById(vendorID) {
+    if (!vendorID) {
+      return Promise.reject(new Error("Missing vendorID"));
+    }
     const vendorTable = `${db.getPrefix()}_expenses.vendor`;
     const contactTable = `${db.getPrefix()}_assets.contacts`;
     const query = `
@@ -28,7 +31,7 @@ const Vendor = {
         LEFT JOIN ${contactTable} c on c.contactID = v.contactID
       WHERE v.vendorID=?`;
     return db.query(query, [vendorID])
-      .spread((rows, meta) => (rows.length) ? rows[0] : null )
+      .then(vendors => (vendors && vendors.length) ? vendors[0] : null )
   }
 };
 
