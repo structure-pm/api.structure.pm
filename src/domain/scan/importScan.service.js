@@ -92,52 +92,30 @@ const ImportScanService = {
    */
   createBillFromScan(scanData, assetData, options) {
     return Promise.try(() => {
-      let ownerID;
-      switch (assetData.assetType) {
-        case 'manager':
-          ownerID = 'NULL';
-          break;
-        case 'owner':
-          ownerID = assetData.assetID;
-          break;
-        case 'location':
-          let Locations = createLocationRepository();
-          ownerID = Locations.findById(assetData.assetID).then(loc => {
-            if (!loc) return Promise.reject(new Error(`Location ${assetData.assetID} not found`))
-            return loc.ownerID;
-          });
-          break;
-        case 'unit':
-          let Units = createUnitRepository();
-          ownerID = Units.findById(assetData.assetID).then(unit => {
-            if (!unit) return Promise.reject(new Error(`Unit ${assetData.assetID} not found`))
-            return unit.ownerID;
-          })
-          break;
-        default:
-          return Promise.reject(new Error(`Unrecognized assetType '${assetData.assetType}'`));
-      }
-
-      return ownerID;
-    })
-    .then(ownerID => {
-      const billData = {
-        ownerID   : ownerID,
-        managerID : (assetData.assetType === 'manager') ? assetData.assetID  : null,
-        locationID: (assetData.assetType === 'location') ? assetData.assetID : null,
-        unitID    : (assetData.assetType === 'unit') ? assetData.assetID  : null,
+      let Bills = this.repositories.Bills;
+      let billData = {
         createDate: new Date(),
         dueDate: moment(scanData.DueDate).toDate(),
         dateStamp: new Date(),
         vendorID: assetData.vendorID,
         expenseID: assetData.expenseID,
         amount: scanData.CurrentAmount,
-      };
-      console.log("creating bill", billData, assetData);
-      return this.repositories.Bills.create(billData, options);
-    })
+        comment: scanData.accountNumber,
+      }
 
-
+      switch (assetData.assetType) {
+        case 'manager':
+          return Bills.createBillForManager(assetData.assetID, billData, options);
+        case 'owner':
+          return Bills.createBillForOwner(assetData.assetID, billData, options);
+        case 'location':
+          return Bills.createBillForLocation(assetData.assetID, billData, options);
+        case 'unit':
+          return Bills.createBillForUnit(assetData.assetID, billData, options);
+        default:
+          return Promise.reject(new Error(`Unrecognized assetType '${assetData.assetType}'`));
+      }
+    });
   },
 
 };

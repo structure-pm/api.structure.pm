@@ -49,7 +49,7 @@ const AccountAssetService = {
     let unknownAccountIDs = [];
     return this.repositories.UnknownAccounts.find({
         accountNumber: accountData.accountNumber,
-        vendorID: accountData.vendorID
+        vendorID: accountData.vendorID,
       })
       .tap(unknownAccounts => unknownAccountIDs = unknownAccounts.map(ua => ua.id))
       .map(unknownAccount => this.services.importScan.createBillFromScan(unknownAccount.scanData, accountData, options) )
