@@ -81,6 +81,8 @@ const Bill = {
       'vendorID',
       'expenseID',
       'amount',
+      'comment',
+      'payment',
     ];
     const values = insertFields.map(fld => billData[fld]);
     const placeHolders = insertFields.map(fld => '?').join(',');

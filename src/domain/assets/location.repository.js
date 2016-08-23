@@ -33,7 +33,6 @@ const Location = {
         LEFT JOIN ${ownerTable}  on owner.ownerID = location.ownerID
       ${whereClause}
       ORDER BY COALESCE(location.shortHand, location.locationID)`;
-    console.log(query);
     return db.query(query, values);
 
   }

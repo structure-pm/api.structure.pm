@@ -100,7 +100,7 @@ const ImportScanService = {
         vendorID: assetData.vendorID,
         expenseID: assetData.expenseID,
         amount: scanData.CurrentAmount,
-        comment: scanData.accountNumber,
+        comment: scanData.AccountNumber,
       }
 
       switch (assetData.assetType) {
