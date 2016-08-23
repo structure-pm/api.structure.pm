@@ -68,6 +68,7 @@ if (process.env.NODE_ENV === 'local') {
     key: fs.readFileSync(path.resolve(__dirname, '..', 'dev/key.pem')),
     cert: fs.readFileSync(path.resolve(__dirname, '..', 'dev/ssl.crt'))
   }
+  console.log("HTTPS!");
   server = https.createServer(httpsOptions, app);
 } else {
   server = http.createServer(app);

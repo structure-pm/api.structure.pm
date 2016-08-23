@@ -59,3 +59,14 @@ export function associateUnknownAccount(req, res, next) {
   })
   .catch(next);
 }
+
+export function deleteUnknownAccount(req, res, next) {
+  let id = req.params.unknownAccountID;
+  let UnknownAccounts = createUnknownAccounts();
+
+  UnknownAccounts.destroy(id)
+    .then(() => {
+      res.json('ok');
+    })
+    .catch(next);
+}

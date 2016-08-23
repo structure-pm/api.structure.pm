@@ -21,6 +21,12 @@ const UnknownAccount = {
     return db.query(query, values, options);
   },
 
+  destroy(id) {
+    const unknownAccountsTable = `${db.getPrefix()}_imports.imported_unknown_account`;
+    const query = ` DELETE FROM ${unknownAccountsTable} WHERE id = ? `;
+    return db.query(query, [id]);
+  },
+
   findById(id, options) {
     return this.find({id: id}, options)
       .then(uas => (uas && uas.length) ? uas[0] : null);
