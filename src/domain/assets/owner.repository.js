@@ -6,7 +6,7 @@ const Owner = {
     const ownerTable = `${db.getPrefix()}_assets.owner`;
     const whereClauses = Object.keys(where)
       .map(key => `${key}=?`)
-      .concat("o.nickname NOT LIKE '%DNM%'");
+      .concat("(o.nickname NOT LIKE '%DNM%' OR o.nickname is null)");
     const values = Object.keys(where).map(key => where[key]);
     const whereClause = (whereClauses.length) ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
