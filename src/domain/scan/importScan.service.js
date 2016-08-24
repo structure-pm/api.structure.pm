@@ -96,7 +96,6 @@ const ImportScanService = {
       let billData = {
         createDate: new Date(),
         dueDate: moment(scanData.DueDate).toDate(),
-        dateStamp: new Date(),
         vendorID: assetData.vendorID,
         expenseID: assetData.expenseID,
         amount: scanData.CurrentAmount,

@@ -77,7 +77,6 @@ const Bill = {
       'unitID',
       'createDate',
       'dueDate',
-      'dateStamp',
       'vendorID',
       'expenseID',
       'amount',
