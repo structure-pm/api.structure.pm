@@ -1,5 +1,6 @@
 import request from 'request-promise';
 import config from '../../config';
+import creditCardType from 'credit-card-type';
 
 const BASE_URL = config.ccpayment.base_uri;
 const DEMO = config.ccpayment.demo;
@@ -18,6 +19,15 @@ const requestOptions = {
   qs: {demo: DEMO},
   headers: headers,
   json: true
+}
+
+function addCCType(transaction) {
+  let ccInfo = transaction.CreditCardInfo;
+  if (!ccInfo || ccInfo.creditCardType) return transaction;
+
+  const ccType = creditCardType(ccInfo.CreditCardNumber || '');
+  ccInfo.CreditCardType = ccType[0].niceType;
+  return Object.assign({}, transaction, {CreditCardInfo: ccInfo});
 }
 
 export function createCustomer(data) {
@@ -45,6 +55,7 @@ export function createSaleTransaction(data) {
 
       return data;
     })
+    .then(addCCType)
     .then(data => {
       // return data;
       return request.post(uri, Object.assign({}, requestOptions, {body: data}));
