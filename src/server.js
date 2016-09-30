@@ -10,6 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import scanRouter from './routes/scan';
 import propertiesRouter from './routes/properties';
+import ccPaymentRouter from './routes/ccpayment';
 
 
 
@@ -38,6 +39,7 @@ app.use(cors());
 // Set up routes for the various services
 app.use(scanRouter(config));
 app.use(propertiesRouter(config));
+app.use(ccPaymentRouter(config));
 // -----------------------------------------------------------------------------
 
 // =============================================================================
@@ -63,7 +65,7 @@ app.use(function(err, req, res, next) {
 // ==== OFF WE GO ==============================================================
 // =============================================================================
 let server;
-if (process.env.NODE_ENV === 'local') {
+if (process.env.NODE_ENV === 'local' && false) {
   const httpsOptions = {
     key: fs.readFileSync(path.resolve(__dirname, '..', 'dev/key.pem')),
     cert: fs.readFileSync(path.resolve(__dirname, '..', 'dev/ssl.crt'))

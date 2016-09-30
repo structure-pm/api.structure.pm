@@ -10,5 +10,12 @@ const config = {
     debug: false,
   },
   dbPrefix: 'structu',
+  ccpayment: {
+    base_uri: 'https://api.streampay.streamlinepayments.com/v2',
+    StreamPayApi: 'Mo73IJstxHQ=',
+    Origin: 'api.structure.pm',
+    CreditCardMethodId: 184,
+    demo: false,
+  }
 }
 export default config;

@@ -12,7 +12,6 @@ const Location = {
     return this.find({locationID: id}, options)
       .then(locs => (locs && locs.length) ? locs[0] : null)
   },
-
   find(where={}, options={}) {
     const locationTable = `${db.getPrefix()}_assets.location`;
     const ownerTable = `${db.getPrefix()}_assets.owner`;
