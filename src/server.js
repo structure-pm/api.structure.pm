@@ -65,7 +65,7 @@ app.use(function(err, req, res, next) {
 // ==== OFF WE GO ==============================================================
 // =============================================================================
 let server;
-if (process.env.NODE_ENV === 'local' && false) {
+if (process.env.NODE_ENV === 'local') {
   const httpsOptions = {
     key: fs.readFileSync(path.resolve(__dirname, '..', 'dev/key.pem')),
     cert: fs.readFileSync(path.resolve(__dirname, '..', 'dev/ssl.crt'))
