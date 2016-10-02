@@ -21,6 +21,17 @@ const requestOptions = {
   json: true
 }
 
+function formatErrorResponse(errResponse, response, body) {
+  if (!errResponse.error || !errResponse.error.Reason) throw errResponse;
+
+  const message = `${errResponse.error.Reason} - ${errResponse.error.Detail}`;
+  const errCode = errResponse.error.ErrorCode;
+  const err = new Error(message);
+  err.status = errResponse.statusCode;
+  err.ErrorCode = errCode;
+  throw err;
+}
+
 function addCCType(transaction) {
   let ccInfo = transaction.CreditCardInfo;
   if (!ccInfo || ccInfo.creditCardType) return transaction;
@@ -32,7 +43,11 @@ function addCCType(transaction) {
 
 export function createCustomer(data) {
   const uri = `${BASE_URL}/customers/`;
-  return request.post(uri, Object.assign({}, requestOptions, {body: data}));
+  return request.post(
+    uri,
+    Object.assign({}, requestOptions, {body: data})
+  )
+    .catch(formatErrorResponse);
 }
 
 export function createSaleTransaction(data) {
@@ -59,12 +74,13 @@ export function createSaleTransaction(data) {
     .then(data => {
       // return data;
       return request.post(uri, Object.assign({}, requestOptions, {body: data}));
-    });
+    })
+    .catch(formatErrorResponse);
 
 }
 
 
 export function getMerchantGatewayPaymentMethods() {
   const uri = `${BASE_URL}/merchantgatewaypaymentmethods/`;
-  return request.get(uri, requestOptions);
+  return request.get(uri, requestOptions).catch(formatErrorResponse);
 }
