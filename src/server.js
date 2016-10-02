@@ -48,8 +48,9 @@ app.use(ccPaymentRouter(config));
 app.use(function(err, req, res, next) {
   const status = err.status || err.statusCode || 500;
 
-  let retErr = { message: err.message };
-  // if (process.env.NODE_ENV !== 'production')
+  let retErr = { message: err.message, ErrorCode: err.ErrorCode };
+
+  if (process.env.NODE_ENV !== 'production')
   retErr.stack = err.stack;
 
   if (process.env.NODE_ENV !== 'production') {
