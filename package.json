@@ -38,10 +38,12 @@
     "cors": "^2.7.1",
     "credit-card-type": "^5.0.0",
     "express": "^4.14.0",
+    "handlebars": "^4.0.5",
     "lodash": "^4.14.2",
     "moment": "^2.14.1",
     "mysql": "^2.11.1",
     "request": "^2.75.0",
-    "request-promise": "^4.1.1"
+    "request-promise": "^4.1.1",
+    "winston": "^2.2.0"
   }
 }

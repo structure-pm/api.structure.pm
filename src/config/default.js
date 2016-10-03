@@ -12,6 +12,7 @@ const config = {
     Origin: 'api.structure.pm',
     CreditCardMethodId: 184,
     demo: true,
+    logFile: path.resolve(__dirname,'../..', 'ccpayment.log'),
   }
 }
 

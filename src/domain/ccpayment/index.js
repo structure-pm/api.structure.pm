@@ -1,6 +1,15 @@
 import request from 'request-promise';
 import config from '../../config';
 import creditCardType from 'credit-card-type';
+import winston from 'winston';
+
+const logFile = config.ccpayment.logFile;
+const logger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.File)({ filename: logFile })
+  ]
+});
+
 
 const BASE_URL = config.ccpayment.base_uri;
 const DEMO = config.ccpayment.demo;
@@ -75,7 +84,11 @@ export function createSaleTransaction(data) {
       // return data;
       return request.post(uri, Object.assign({}, requestOptions, {body: data}));
     })
-    .catch(formatErrorResponse);
+    .catch(formatErrorResponse)
+    .catch(err => {
+      logger.error(`[ERROR CustomerID: ${data.CustomerId}] (${err.ErrorCode}) ${err.message}`);
+      throw(err);
+    });
 
 }
 
