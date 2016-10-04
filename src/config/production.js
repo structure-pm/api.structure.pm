@@ -1,3 +1,5 @@
+import path from 'path';
+
 const config = {
   port: 8080,
   db: {
@@ -16,6 +18,7 @@ const config = {
     Origin: 'api.structure.pm',
     CreditCardMethodId: 184,
     demo: false,
+    logFile: path.resolve(__dirname,'../..', 'ccpayment.log'),
   }
 }
 export default config;
