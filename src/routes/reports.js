@@ -1,9 +1,9 @@
 import {Router} from 'express';
-import * as scan from './controllers/report.controller';
+import * as reports from './controllers/reports.controller';
 
 export default function(config) {
   let router = Router();
-  router.post('/report', report.renderReport);
+  router.post('/reports', reports.renderReport);
 
   return router;
 }

@@ -1,6 +1,13 @@
-import handleBars from 'handlebars';
+import handlebars from 'handlebars';
 
-export function renderReport(def, data) {
+export function render(reportName, reportFormat, options, data) {
+  reportName = 'general'; // this is the only report supported at this time
+  reportFormat = 'html'; // this is the only format supported at this time
+
+  return renderGeneralReport(options, data);
+}
+
+function renderGeneralReport(def, data) {
   const report = Object.assign({}, def, {items: data});
 
   const reportHeader = handlebars.compile(report.reportHeader || '');
@@ -26,54 +33,69 @@ export function renderReport(def, data) {
  * 	items: collection of items in the group
  * }
  */
-function groupBy( col , selector ) {
+function groupBy( items , selector ) {
   const groups = {};
   if (typeof selector === 'string') {
-    selector = item => item[selector];
+    const field = selector;
+    selector = item => item[field];
   }
 
-  col.forEach( item => {
-    var group = JSON.stringify( selector(item) );
-    groups[group] = groups[group] || [];
-    groups[group].push( item );
+
+  items.forEach( item => {
+    var groupKey = JSON.stringify( selector(item) );
+    groups[groupKey] = groups[groupKey] || [];
+    groups[groupKey].push( item );
   });
 
-  return Object
-    .keys(groups)
-    .map( group => ({key: group, items: groups[group]}) );
+  return Object.keys(groups).map( groupKey => ({
+    key: groupKey,
+    items: groups[groupKey]
+  }) );
 }
 
 
 
 
 function renderGroup(group, def) {
-  const groupHeader = handlebars.compile(group.groupHeader || '');
-  const groupFooter = handlebars.compile(group.groupFooter || '');
+  let html = '';
 
-  let html = groupHeader(group);
+
+  if (group.groupHeader) {
+    const groupHeader = handlebars.compile(group.groupHeader || '');
+    html += "<li>" + groupHeader(group) + "</li>";
+  }
+
+  html += "<ul>";
 
   if (!group.groupBy) {
     // TODO: Sort the items
     html += renderItems(group.items, def.detail);
   } else {
     const groups = groupBy(group.items, group.groupBy.field)
-      .map(group => Object.assign(group, group.groupBy));
+      .map(subGroup => Object.assign(subGroup, group.groupBy));
 
     // TODO: Sort the groups
 
     html += groups.reduce((html, group) => {
       html += renderGroup(group, def);
       return html;
-    });
+    },'');
   }
 
-  html += groupFooter(group);
+  html += "</ul>";
+
+  if (group.groupFooter) {
+    const groupFooter = handlebars.compile(group.groupFooter || '');
+    html += "<li>" + groupFooter(group) + "</li>";
+  }
   return html;
 }
 
 function renderItems(items, template) {
   return items.reduce((html, item) => {
+    html += "<li>";
     html += handlebars.compile(template)(item);
+    html += "</li>";
     return html;
   }, '');
 }

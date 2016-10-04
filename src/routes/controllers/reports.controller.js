@@ -1,5 +1,6 @@
 import Moment from 'moment';
-import reportSvc from '../../domain/reports/report.service';
+import * as reportSvc from '../../domain/reports/report.service';
+import * as reportDataSvc from '../../domain/reports/reportData.service';
 /**
  * const report = {
  *   reportHeader: "{{handlebars}}",
@@ -36,8 +37,7 @@ export function renderReport(req, res, next) {
     return next(err);
   }
 
-  const filter = dataset.filter || {};
-  if (!filter.ownerID) {
+  if (!dataset.filter || !dataset.filter.ownerID) {
     const msg = `Currently, Structure Reporting can only provide reports for a single owner at a time.
       Please provide an 'ownerID' field in the dataset.filter object.`;
     const err = new Error(msg);
@@ -45,13 +45,13 @@ export function renderReport(req, res, next) {
     return next(err);
   }
 
-  filter.startDate = filter.startDate || moment().startOf('year');
-  filter.endDate = filter.endDate || moment().endOf('year');
+  dataset.filter.startDate = dataset.filter.startDate || moment().startOf('year');
+  dataset.filter.endDate = dataset.filter.endDate || moment().endOf('year');
 
   reportDataSvc.get(dataset.name, dataset)
     .then(data => reportSvc.render(report.name, reportFormat, report, data))
     .then(output => {
-      res.send(outout);
+      res.send(output);
     })
     .catch(next);
 }
