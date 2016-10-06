@@ -28,7 +28,7 @@ const reportHeaderTemplate = `
   </div>`;
 const groupTemplate = `
   {{{groupHeader}}}
-  <ul class="report-group">
+  <ul class="report-group group-level-{{groupLevel}}">
     {{{content}}}
   </ul>
   {{{groupFooter}}}
@@ -38,21 +38,37 @@ const lineTemplate = `
     <div class="report-line-detail">
       {{{detail}}}
     </div>
-    <div class="report-line-columns">
-      {{{columns}}}
-    </div>
+    {{{columns}}}
   </li>`;
+
 const columnsTemplate = `
-  {{#each this}}
-    <div class="report-line-column column-{{@index}}">
-      {{this}}
-    </div>
-  {{/each}}
+  <div class="report-line-columns group-level-{{groupLevel}}">
+    {{#each columns}}
+      {{{this}}}
+    {{/each}}
+  </div>
 `;
+
+const columnTemplate = `
+  <div class="report-line-column">
+    {{value}}
+  </div>
+`;
+
+const compiledColumn = handlebars.compile(columnTemplate);
+const compiledColumns = handlebars.compile(columnsTemplate);
 
 const renderLine = handlebars.compile(lineTemplate);
 const renderGroup = handlebars.compile(groupTemplate);
-const renderColumns = handlebars.compile(columnsTemplate);
+
+function renderColumns(colVals, groupLevel) {
+  if (!Array.isArray(colVals)) colVals = [colVals];
+
+  return compiledColumns({
+    columns: colVals.map(value => compiledColumn({value})),
+    groupLevel: groupLevel
+  });
+}
 
 export default function renderGeneralListReport(options, data) {
   const groupings = normalizeGroups(options.groupBy, options);
@@ -62,12 +78,16 @@ export default function renderGeneralListReport(options, data) {
   const groupOrder = (grouping)
     ? sortGroups(Object.keys(groups), grouping.sortBy)
     : null;
+
   const report = Object.assign({}, options, {
+    compiledItemDetail: handlebars.compile(options.detail),
+    compiledItemColumns: compileColumns(options.columns),
     groupBy: groupings,
     renderColumns: renderItemColumns,
     items: data,
     groups: groups,
     groupOrder: groupOrder,
+    groupLevel: 0,
   });
 
   const reportHeader = handlebars.compile(report.reportHeader || reportHeaderTemplate || '');
@@ -80,7 +100,6 @@ export default function renderGeneralListReport(options, data) {
       const html = handlebars.compile(reportTemplate)({
         header: reportHeader(report),
         footer: reportFooter(report),
-        // content: buildGroups(report.groups, report),
         content: buildGroup(report, report),
         style: css
       });
@@ -102,8 +121,8 @@ export function normalizeGroups(groupings, options) {
 
   return groupings.map(grouping => Object.assign(
     {
-      renderHeaderColumns: compileColumns(grouping.headerColumns),
-      renderFooterColumns: compileColumns(grouping.footerColumns),
+      compiledHeaderColumns: compileColumns(grouping.headerColumns),
+      compiledFooterColumns: compileColumns(grouping.footerColumns),
     },
     grouping
   ));
@@ -128,7 +147,7 @@ export function getAggregates(group) {
   return aggregates;
 }
 
-export function applyGroupBy(groupings, data) {
+export function applyGroupBy(groupings, data, level=1) {
   if (!groupings || !groupings.length) return null;
   if (!Array.isArray(groupings)) groupings = [groupings];
 
@@ -137,14 +156,13 @@ export function applyGroupBy(groupings, data) {
   const groups = groupBy(data, grouping.selector);
   Object.keys(groups).forEach(key => {
     const group = groups[key];
+    group.groupLevel = level;
     group.grouping = grouping;
     group.aggregates = getAggregates(group);
-    group.groups = applyGroupBy(nextGroupings, group.items);
+    group.groups = applyGroupBy(nextGroupings, group.items, level+1);
     if (group.groups) {
       group.groupOrder = sortGroups(Object.keys(group.groups), grouping.sortBy);
     }
-    group.headerColumns = (grouping.renderHeaderColumns) ? grouping.renderHeaderColumns.map(render => render(group)) : null;
-    group.footerColumns = (grouping.renderFooterColumns) ? grouping.renderFooterColumns.map(render => render(group)) : null;
   }, {});
 
   return groups;
@@ -235,28 +253,23 @@ export function groupBy( items , selector ) {
 
 
 
-
-// function buildGroups(groups, report) {
-//   return Object
-//     .keys(groups)
-//     .map(key => buildGroup(groups[key], report))
-//     .join('\n');
-// }
-
-
 function buildGroup(group, def) {
   const currentGrouping = group.grouping || {};
   const renderGroupHeaderDetail = handlebars.compile(currentGrouping.groupHeader || '');
   const renderGroupFooterDetail = handlebars.compile(currentGrouping.groupFooter || '');
+
+  const headerColumns = (currentGrouping.compiledHeaderColumns) ? currentGrouping.compiledHeaderColumns.map(render => render(group)) : null;
+  const footerColumns = (currentGrouping.compiledFooterColumns) ? currentGrouping.compiledFooterColumns.map(render => render(group)) : null;
+
   const headerContext = {
     lineClass: "report-group-header",
     detail: renderGroupHeaderDetail(group),
-    columns: group.headerColumns
+    columns: renderColumns(headerColumns, group.groupLevel)
   };
   const footerContext = {
     lineClass: "report-group-footer",
     detail: renderGroupFooterDetail(group),
-    columns: group.footerColumns
+    columns: renderColumns(footerColumns, group.groupLevel)
   };
 
 
@@ -266,7 +279,7 @@ function buildGroup(group, def) {
       .map(key => buildGroup(group.groups[key], def))
       .join('\n');
   } else {
-    content = renderItems(group.items, def.detail, def.renderColumns);
+    content = renderItems(group.items, def.compiledItemDetail, def.compiledItemColumns);
   }
   const groupHeader = (currentGrouping.groupHeader) ? renderLine(headerContext) : '';
   const groupFooter = (currentGrouping.groupFooter) ? renderLine(footerContext) : '';
@@ -274,18 +287,21 @@ function buildGroup(group, def) {
   //   ? buildGroups(group.groups, def)
   //   : renderItems(group.items, def.detail, def.renderColumns);
 
-  return renderGroup({groupHeader, groupFooter, content});
+  return renderGroup({groupHeader, groupFooter, content, groupLevel: group.groupLevel});
 }
 
 
-function renderItems(items, template, renderColumnFns) {
-  const renderItemDetail = handlebars.compile(template);
+function renderItems(items, compiledItemDetail, compiledColumnDetails, groupLevel) {
 
   return items
-    .map(item => renderLine({
-      lineClass: 'report-item',
-      detail: renderItemDetail(item),
-      columns: renderColumnFns.map(render => render(item))
-    }))
+    .map(item => {
+      const columns = compiledColumnDetails.map(render => render(item));
+      const context = {
+        lineClass: 'report-item',
+        detail: compiledItemDetail(item),
+        columns: renderColumns(columns, groupLevel)
+      }
+      return renderLine(context);
+    })
     .join('\n');
 }

@@ -28,7 +28,20 @@ export default function(api) {
         },
         ".report-line-column": {
           flexGrow: 0
-        }
+        },
+
+      },
+
+      ".report-group": {
+        marginBottom: '10px',
+      },
+
+      ".report-group-footer": {
+        marginTop: '10px'
+      },
+
+      ".report-group-footer .report-line-columns.group-level-1 ": {
+        borderBottom: "double black 5px"
       },
 
       ".total": {
