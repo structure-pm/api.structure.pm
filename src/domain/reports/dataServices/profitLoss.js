@@ -35,6 +35,7 @@ export default function pl(options) {
     AND il.dateStamp BETWEEN '${startDate}' AND '${endDate}'
     AND (loc.locationID is NULL OR il.dateStamp >=d.startDate)
     AND il.incomeID IS NOT NULL
+    and mgl.sIncome = 1
   GROUP BY
     inc.type, mgl.acctGL, mgl.type`;
 
