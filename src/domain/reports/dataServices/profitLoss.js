@@ -66,6 +66,7 @@ const expenseQuery = `
       AND (loc.locationID IS NULL OR el.dateStamp >= d.startDate)
       OR (el.dateStamp IS NULL AND el.createDate BETWEEN '${startDate}' AND '${endDate}')
     )
+    and mgl.sIncome = 1
   GROUP BY
     exp.type, mgl.acctGL, mgl.type`;
 
