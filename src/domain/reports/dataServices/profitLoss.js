@@ -13,6 +13,10 @@ export default function pl(options) {
   const incomeQuery = `
   SELECT
     inc.type as accountName,
+    CASE
+      WHEN inc.type REGEXP 'capital|mortgage' THEN 'Capital Income/Expense'
+      ELSE 'Operating Income/Expense'
+    END as accountOperating,
     mgl.acctGL as accountCode,
     'income' as accountType,
     mgl.type as accountGroup,
@@ -37,6 +41,10 @@ export default function pl(options) {
 const expenseQuery = `
   SELECT
     exp.type as accountName,
+    CASE
+      WHEN exp.type REGEXP 'capital|mortgage' THEN 'Capital Income/Expense'
+      ELSE 'Operating Income/Expense'
+    END as accountOperating,
     mgl.acctGL as accountCode,
     'expense' as accountType,
     mgl.type as accountGroup,
