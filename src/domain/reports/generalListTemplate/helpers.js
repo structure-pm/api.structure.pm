@@ -65,14 +65,16 @@ export function sumArgs(group, ...args) {
 }
 
 
-
+function findGroup(key) {
+  return g => g.key === key;
+}
 export function groupGet(group, path, defaultValue) {
   const parts = path.split('.');
   return parts.reduce((ret, part) => {
     if (!ret) return ret;
 
-    if (ret.groups && ret.groups[part]) {
-      return ret.groups[part];
+    if (ret.groups && ret.groups.find(findGroup(part))) {
+      return ret.groups.find(findGroup(part));
     } else if (ret[part]) {
       return ret[part];
     } else {
