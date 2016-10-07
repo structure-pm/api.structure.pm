@@ -43,6 +43,14 @@ export default function registerHelpers(handlebars) {
     return groupGet(this, path, defaultValue);
   })
 
+  handlebars.registerHelper('csvEmpty', function(plus, options) {
+    const minus = options.hash.minus || 0;
+    const n = plus - minus;
+    const cols = Array.from(Array(n)).map(a => '""').join(',');
+
+    return (cols.length) ? new handlebars.SafeString(cols + ',') : '';
+  })
+
 
 }
 

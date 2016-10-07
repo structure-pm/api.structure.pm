@@ -4,8 +4,15 @@ import handlebars from 'handlebars';
 import registerHelpers from './helpers'
 import style from './style';
 import sass from 'node-sass';
-import * as htmlTemplates from './templates/html';
 
+import * as htmlTemplates from './templates/html';
+import * as csvTemplates from './templates/csv';
+
+
+const templateSets = {
+  html: compileObj(htmlTemplates),
+  csv : compileObj(csvTemplates),
+};
 
 
 const styleFile = path.join(__dirname, 'style.scss');
@@ -18,9 +25,11 @@ registerHelpers(handlebars);
 
 
 export default function renderGeneralListReport(options, items, format="html") {
-
   const report = Object.assign({}, options, {items});
-  const templates = compileObj(htmlTemplates); // TODO: make this dependent on format
+  const templates = templateSets[format];
+  if (!templates) {
+    throw new Error(`Unknown report format: ${format}`);
+  }
 
 
   // Compile the headers and footers for each grouping
@@ -37,11 +46,15 @@ export default function renderGeneralListReport(options, items, format="html") {
   }
 
 
+  report.root.containedLevels = (report.root.groups && report.root.groups.length)
+    ? Math.max.apply(null, report.root.groups.map(g => g.containedLevels)) + 1
+    : 0;
+
   const reportHeader = handlebars.compile(report.reportHeader || '');
   const reportFooter = handlebars.compile(report.reportFooter || '');
 
   const html = templates.report({
-    header: reportHeader(report),
+    header: templates.reportHeader(report),
     footer: reportFooter(report),
     content: renderGroup(report.root, report, templates),
     style: STYLE
@@ -92,8 +105,6 @@ export function applyGroupBy(groupings, data, level=0) {
   const currentGrouping = groupings[0];
   const nextGroupings = groupings.slice(1);
 
-  const groups = groupBy(data, currentGrouping.selector);
-  groups.sort(groupSorter(currentGrouping.sortBy));
 
   return groupBy(data, currentGrouping.selector)
     .sort(groupSorter(currentGrouping.sortBy))
@@ -102,7 +113,14 @@ export function applyGroupBy(groupings, data, level=0) {
       grouping: currentGrouping,
       aggregates: getAggregates(group, currentGrouping.aggregates),
       groups: applyGroupBy(nextGroupings, group.items, level+1)
+    }))
+    .map(group => Object.assign(group, {
+      // used to determine the maximum depth
+      containedLevels: (group.groups && group.groups.length)
+        ? Math.max.apply(null, group.groups.map(g => g.containedLevels)) + 1
+        : 0
     }));
+
 }
 
 /**
@@ -215,6 +233,7 @@ function renderGroup(group, report, templates) {
     const headerContext = {
       lineType: "group-header",
       level: group.level,
+      maxLevel: report.root.containedLevels,
       detail: compiledDetail(group),
       columns: formattedValues.map(val => templates.column(val))
     };
@@ -229,6 +248,7 @@ function renderGroup(group, report, templates) {
     const footerContext = {
       lineType: "group-footer",
       level: group.level,
+      maxLevel: report.root.containedLevels,
       detail: compiledDetail(group),
       columns: formattedValues.map(val => templates.column(val))
       // columns: renderColumns(headerColumns, group.groupLevel)
@@ -257,7 +277,8 @@ function renderItems(items, report, templates, level) {
       const columns = compiledItemColumns.map(render => render(item));
       const context = {
         lineType: 'item',
-        level: level,
+        level: level+1, // Items are always 1 level deeper than their parent group
+        maxLevel: report.root.containedLevels,
         detail: compiledItemDetail(item),
         columns: renderItemColumns(item, report, templates)
       }

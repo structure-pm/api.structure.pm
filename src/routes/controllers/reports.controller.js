@@ -1,3 +1,4 @@
+import {Readable} from 'stream';
 import Moment from 'moment';
 import * as reportSvc from '../../domain/reports/report.service';
 import * as reportDataSvc from '../../domain/reports/reportData.service';
@@ -21,9 +22,15 @@ import * as reportDataSvc from '../../domain/reports/reportData.service';
  **/
 
 export function renderReport(req, res, next) {
-  let dataset = req.body.dataset,
-      report = req.body.report,
-      reportFormat = req.body.format || 'html';
+  let body;
+  if (req.body.json) {
+    body = JSON.parse(req.body.json);
+  } else {
+    body = req.body;
+  }
+  let dataset = body.dataset,
+      report = body.report,
+      reportFormat = req.query.format || body.format || 'html';
 
   if (!dataset) {
     const err = new Error("Structure Reporting requires a missing data definition field (`dataset`) to proceed.");
@@ -48,10 +55,23 @@ export function renderReport(req, res, next) {
   dataset.filter.startDate = dataset.filter.startDate || moment().startOf('year');
   dataset.filter.endDate = dataset.filter.endDate || moment().endOf('year');
 
+
+
   reportDataSvc.get(dataset.name, dataset)
     .then(data => reportSvc.render(report.name, reportFormat, report, data))
     .then(output => {
-      res.send(output);
+      if (reportFormat === 'html') {
+        res.send(output);
+      } else if (reportFormat === 'csv') {
+        res.attachment('report.csv');
+
+        const reportStream = new Readable();
+        reportStream.pipe(res);
+        reportStream.push(output);
+        reportStream.push(null);
+      } else {
+        throw new Error(`Unknown format type ${reportFormat}`)
+      }
     })
     .catch(next);
 }
