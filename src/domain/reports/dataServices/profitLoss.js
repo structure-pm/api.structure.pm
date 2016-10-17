@@ -88,9 +88,9 @@ export default function pl(options) {
     CASE
       WHEN exp.type REGEXP 'capital|mortgage' THEN 'Capital Income/Expense'
       ELSE 'Operating Income/Expense'
-    END as accountOperating,
+      END as accountOperating,
     mgl.acctGL as accountCode,
-    'expense' as accountType,
+    CASE WHEN mgl.type REGEXP 'Income' THEN 'income' ELSE 'expense' END as accountType,
     mgl.type as accountGroup,
     ${columnSQL}
   FROM ${dbPrefix}_expenses.eLedger el
