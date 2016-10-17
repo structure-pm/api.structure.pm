@@ -60,6 +60,7 @@ export default function pl(options) {
     mgl.acctGL as accountCode,
     'income' as accountType,
     mgl.type as accountGroup,
+    'credit' as normalBalance,
     ${columnSQL}
   FROM ${dbPrefix}_income.iLedger il
     LEFT JOIN ${dbPrefix}_income.income inc on il.incomeID = inc.incomeID
@@ -92,6 +93,7 @@ export default function pl(options) {
     mgl.acctGL as accountCode,
     CASE WHEN mgl.type REGEXP 'Income' THEN 'income' ELSE 'expense' END as accountType,
     mgl.type as accountGroup,
+    'debit' as normalBalance,
     ${columnSQL}
   FROM ${dbPrefix}_expenses.eLedger el
     LEFT JOIN ${dbPrefix}_expenses.recurring r ON el.recurringID = r.recurringID

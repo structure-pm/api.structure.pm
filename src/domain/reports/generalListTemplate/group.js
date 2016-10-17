@@ -86,9 +86,15 @@ Group.groupBy = function( items , selector ) {
     }));
 }
 
+function normal(normalBalance) {
+  if (normalBalance === 'debit') return -1;
+  return 1;
+}
+
 export function getAggregates(columns, agg) {
   const group = this;
   agg = agg || {};
+
 
   return columns.map(col => {
 
@@ -97,7 +103,15 @@ export function getAggregates(columns, agg) {
         case 'sum':
           aggregates.sum = group.items.reduce((sum, item) => sum + item[col.field],0);
           break
-        // TODO: max, min, mean
+        case 'normalSum':
+          aggregates.normalSum = group.items.reduce((sum, item) => sum + (normal(item.normalBalance) * item[col.field]),0);
+          break;
+        case 'absSum':
+          aggregates.absSum = Math.abs(group.items.reduce((sum, item) => sum + (normal(item.normalBalance) * item[col.field]),0));
+          break;
+        case 'max':
+        case 'min':
+        case 'mean':
         default:
           const script = engine.renderTemplate(agg[aggType], {group, currentColumn: col.columnIndex});
           aggregates[aggType] = engine.sandboxEval(script);

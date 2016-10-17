@@ -31,7 +31,6 @@ export default function GeneralListTemplate(options, dataset, format="html") {
   // Compile templates related to data times
   this.formatItemDetail = engine.compile(options.detail);
 
-
   if (!this.items) throw new Error("Missing data from dataset");
   if (!this.columns) throw new Error("Missing dataset partitions setting");
   if (!this.renderReport) throw new Error(`Unknown report format: ${format}`);
