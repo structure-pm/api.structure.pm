@@ -21,6 +21,7 @@
     "babel-preset-stage-0": "^6.5.0",
     "babel-register": "^6.8.0",
     "chai": "^3.5.0",
+    "copyfiles": "^1.0.0",
     "coveralls": "^2.11.9",
     "eslint": "^2.9.0",
     "eslint-config-airbnb": "^9.0.1",
