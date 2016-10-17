@@ -45,11 +45,13 @@
     }
 
     $column-width: 8em;
+    $column-spacing: 0.5em;
     .report-line-column {
       flex-grow: 0;
       flex-shrink: 0;
       text-align: right;
       width: $column-width;
+      margin-left: $column-spacing;
     }
 
     .column-header .report-line-column {
@@ -59,7 +61,7 @@
 
     $i: 0;
     @while $i<50 {
-      .report-line-columns.columns-#{$i} { width: $column-width * $i; }
+      .report-line-columns.columns-#{$i} { width: ($column-width + $column-spacing) * $i; }
       $i: $i+1;
     }
 

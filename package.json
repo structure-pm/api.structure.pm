@@ -10,7 +10,8 @@
     "test:cover": "babel-node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha",
     "coveralls": "cat ./coverage/lcov.info | coveralls",
     "start": "NODE_ENV=local nodemon -L --exec babel-node -- src/server.js",
-    "build": "babel src -d build"
+    "build": "babel src -d build && npm run style",
+    "style": "node node_modules/.bin/copyfiles -u 1 ./src/**/*.scss ./build"
   },
   "devDependencies": {
     "babel-cli": "^6.8.0",
