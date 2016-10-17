@@ -17,7 +17,7 @@ export function partitionBy(options, prefix, sumColumn) {
   };
 
   // Partition by time period
-  if (['month', 'year', 'quarter'].includes(partition)) {
+  if (['month', 'year', 'quarter'].indexOf(partition) >=0) {
     const {startDate, endDate} = options.filter;
     const periods = dateUtils.nBetween(partition, startDate, endDate);
     periods
