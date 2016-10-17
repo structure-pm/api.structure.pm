@@ -1,9 +1,10 @@
 import {expect} from 'chai';
+import handlebars from 'handlebars';
 import * as general from '../../src/domain/reports/generalListTemplate';
 import * as helpers from '../../src/domain/reports/generalListTemplate/helpers';
 
 describe.only("Reports | GeneralListTemplate", () => {
-  describe("normalizeGroups", () => {
+  describe.skip("normalizeGroups", () => {
     it("returns an array of groups", () => {
       const groupings = [{}, {}];
       const newGroupings = general.normalizeGroups(groupings, {});
@@ -34,12 +35,13 @@ describe.only("Reports | GeneralListTemplate", () => {
 
     it("groups the data by field", () => {
       const groups = general.groupBy(data, 'myGroup');
-      expect(groups).to.have.property('a');
-      expect(groups).to.have.property('b');
-      expect(groups.a).to.have.property('items');
-      expect(groups.b).to.have.property('items');
-      expect(groups.a.items).to.have.length(4);
-      expect(groups.b.items).to.have.length(4);
+      expect(groups).to.have.length(2);
+      expect(groups[0].key).to.equal('a');
+      expect(groups[1].key).to.equal('b');
+      expect(groups[0]).to.have.property('items');
+      expect(groups[1]).to.have.property('items');
+      expect(groups[0].items).to.have.length(4);
+      expect(groups[1].items).to.have.length(4);
     })
   })
 
@@ -49,45 +51,7 @@ describe.only("Reports | GeneralListTemplate", () => {
       expect(helpers.groupGet(group, 'thing')).to.equal(123);
     });
 
-    // it("Gets a property on the _properties object", () => {
-    //   const group = new Group();
-    //   group._properties.thing1 = 1;
-    //   expect(group.get('thing1')).to.equal(1);
-    // });
-    //
-    // it("evaluates functions on the properties object", () => {
-    //   const group = new Group({
-    //     properties: {thing1: function() {return 123}}
-    //   });
-    //   expect(group.get('thing1')).to.equal(123);
-    // });
 
-    // it("passes the group as an argument to the function", () => {
-    //   const group = new Group({
-    //     properties: {
-    //       thing1: 123,
-    //       thing2: grp => grp.get('thing1') + 1,
-    //     }
-    //   });
-    //   const thing1 = group.get('thing1');
-    //   const thing2 = group.get('thing2');
-    //   expect(thing1).to.equal(123);
-    //   expect(thing2).to.equal(thing1 + 1);
-    // });
-
-    it("searches subgroups", () => {
-      const subGroup = {thing: 123};
-      const group = {
-        groups: {group1: subGroup}
-      }
-      expect(helpers.groupGet(group, 'group1')).to.equal(subGroup);
-    })
-
-    it("gets properties on subgroups by path", () => {
-      const subGroup = {thing: 123};
-      const group = {groups: {group1: subGroup}};
-      expect(helpers.groupGet(group, 'group1.thing')).to.equal(123);
-    });
 
 
   })
@@ -116,4 +80,55 @@ describe.only("Reports | GeneralListTemplate", () => {
       expect(sum).to.equal(1);
     })
   })
+
+  describe("getColumn()", () => {
+    const {getColumn} = helpers;
+    handlebars.registerHelper('getColumn', getColumn);
+
+    it("gets a column from the current group", () => {
+      const group = {
+        aggregates: [{sum: 123}]
+      }
+      const context = {
+        currentColumn:0,
+        group: group,
+      }
+      const html = handlebars.compile("{{getColumn 'sum'}}")(context);
+      expect(html).to.equal('123');
+    })
+
+    it("gets a column from the current group in the second column", () => {
+      const group = {
+        aggregates: [{sum: 123},{sum: 456}]
+      }
+      const context = {
+        currentColumn:1,
+        group: group,
+      }
+      const html = handlebars.compile("{{getColumn 'sum'}}")(context);
+      expect(html).to.equal('456');
+    })
+    it("gets a column from a nested group", () => {
+      const group = {
+        groups: [
+          {
+            key: 'myGroup1',
+            aggregates: [{sum:123}]
+          },
+          {
+            key: 'myGroup2',
+            aggregates: [{sum:456}]
+          }
+        ],
+        aggregates: [{sum: 1},{sum: 2}]
+      }
+      const context = {
+        currentColumn:0,
+        group: group,
+      }
+      const html = handlebars.compile("{{getColumn 'myGroup2.sum'}}")(context);
+      expect(html).to.equal('456');
+    })
+  });
+
 });

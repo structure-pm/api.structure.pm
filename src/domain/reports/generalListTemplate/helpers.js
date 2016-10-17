@@ -22,6 +22,12 @@ export default function registerHelpers(handlebars) {
       return money;
   });
 
+  handlebars.registerHelper('safeVal', function (value, safeValue) {
+    var out = value || safeValue;
+    return new handlebars.SafeString(out);
+  });
+
+
   handlebars.registerHelper('capitalize', function(phrase, allwords) {
     phrase = (allwords) ? phrase.split(' ') : [phrase];
     return phrase
@@ -42,6 +48,8 @@ export default function registerHelpers(handlebars) {
   handlebars.registerHelper('get', function(path, defaultValue) {
     return groupGet(this, path, defaultValue);
   })
+
+  handlebars.registerHelper('getColumn', getColumn);
 
   handlebars.registerHelper('csvEmpty', function(plus, options) {
     const minus = options.hash.minus || 0;
@@ -76,6 +84,7 @@ export function sumArgs(group, ...args) {
 function findGroup(key) {
   return g => g.key === key;
 }
+
 export function groupGet(group, path, defaultValue) {
   const parts = path.split('.');
   return parts.reduce((ret, part) => {
@@ -89,4 +98,42 @@ export function groupGet(group, path, defaultValue) {
       return defaultValue;
     }
   }, group);
+}
+
+
+function seekSubGroup(root, path) {
+  const parts = path.split('.');
+
+  // console.log("SEEKING", root.key, path);
+  // console.log("---- ", root.groups.map(g => g.key))
+  // console.log("---- ", root.groups.find(g => g.key === 'income'));
+  // console.log("--- found", (group || {}).key)
+
+  const group = parts.reduce((group, part) => {
+    if (group === null || group === undefined) return group;
+    return  (group.groups) ? group.groups.find(g => g.key === part) : null;
+  }, root);
+  return group;
+}
+
+
+export function getColumn(path, options) {
+  const root = options.data.root;
+  const defaultValue = options.hash.default || 0;
+
+  if (!root.hasOwnProperty('currentColumn')) {
+    throw new Error("getColumn must be called in the context of a column operation. No `currentColumn` field found");
+  }
+
+  if (!root.hasOwnProperty('group')) {
+    throw new Error("getColumn must be called in the context of a group operation. No `group` field found");
+  }
+
+  const parts = path.split('.');
+  const groupParts = parts.slice(0, parts.length-1).join('.');
+  const aggregateName = parts[parts.length-1];
+
+
+  const group = seekSubGroup(root.group, groupParts);
+  return (group) ? group.aggregates[root.currentColumn][aggregateName] : defaultValue;
 }

@@ -1,0 +1,104 @@
+.report-wrapper {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: #fff;
+  padding: 10px;
+  width: 100%;
+
+  &, h1, h2 {
+    color: #000 !important;
+  }
+
+  div {
+    position: relative;
+  }
+
+  header.report-header {
+    border-bottom: 2px solid #000;
+    margin-bottom: 10px;
+
+    .report-title {
+      text-align:center
+    }
+  }
+
+
+  .report-content {
+    min-width: 100%;
+    overflow: auto;
+
+
+    .report-line {
+      display: flex;
+      flex-flow: row nowrap;
+      padding: 3px 0;
+    }
+
+
+
+    .report-line-detail {
+      flex-grow: 1;
+      min-width: 50%;
+    }
+    .report-line-columns {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    $column-width: 8em;
+    .report-line-column {
+      flex-grow: 0;
+      flex-shrink: 0;
+      text-align: right;
+      width: $column-width;
+    }
+
+    .column-header .report-line-column {
+      font-weight: bold;
+      border-bottom: 3px solid black;
+    }
+
+    $i: 0;
+    @while $i<50 {
+      .report-line-columns.columns-#{$i} { width: $column-width * $i; }
+      $i: $i+1;
+    }
+
+
+
+
+    .report-group-footer {
+      margin-top: 10px;
+    }
+
+    $group-indent: 15px;
+    $i: 1;
+    @while $i < 10 {
+      .report-line-detail.level-#{$i} { padding-left: $group-indent * $i; }
+      $i: $i + 1;
+    }
+  }
+
+
+
+
+  .report-line-columns.group-footer.level-1 {
+    border-top: solid black 3px;
+    border-bottom: double black 5px;
+    margin-top: 10px;
+  }
+  .report-line-detail.group-footer.level-1 {
+    border-top: solid transparent 3px;
+    border-bottom: double transparent 5px;
+    margin-top: 10px;
+  }
+
+  .report-line.group-footer .report-line-column {
+    border-top: 1px solid black;
+  }
+
+
+  .total {
+    border-top: 1px solid #000
+  }
+
+}

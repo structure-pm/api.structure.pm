@@ -58,7 +58,7 @@ export function renderReport(req, res, next) {
 
 
   reportDataSvc.get(dataset.name, dataset)
-    .then(data => reportSvc.render(report.name, reportFormat, report, data))
+    .then(results => reportSvc.render(report.name, reportFormat, report, results))
     .then(output => {
       if (reportFormat === 'html') {
         res.send(output);

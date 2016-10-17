@@ -1,4 +1,44 @@
 import * as db from '../../../db';
+import * as dateUtils from './dateUtils';
+import Moment from 'moment';
+
+
+
+
+export function partitionBy(options, prefix, sumColumn) {
+  const {partition} = options;
+  const columnSQL = [];
+  const partitions = [];
+
+  const columnNameDateFormats = {
+    month: 'MMM-YYYY',
+    quarter: '[Q]Q-YYYY',
+    year: 'YYYY'
+  };
+
+  // Partition by time period
+  if (['month', 'year', 'quarter'].includes(partition)) {
+    const {startDate, endDate} = options.filter;
+    const periods = dateUtils.nBetween(partition, startDate, endDate);
+    periods
+      .map(period => Moment(period))
+      .forEach((period, idx) => {
+        const start = period.startOf(partition).format('YYYY-MM-DD'); //toISOString();
+        const end = period.endOf(partition).format('YYYY-MM-DD'); //toISOString();
+        const field = `partition${idx}`;
+        const name = period.format(columnNameDateFormats[partition]);
+        const col = `SUM(CASE WHEN ${prefix}.dateStamp BETWEEN '${start}' AND '${end}' THEN ${prefix}.${sumColumn} ELSE 0 END) AS ${field}`;
+        columnSQL.push(col);
+        partitions.push({field, name} );
+      })
+  }
+
+  // Default partition is the account balance
+  columnSQL.push(`SUM(${prefix}.${sumColumn}) as accountBalance`);
+  partitions.push({field: 'accountBalance', name: 'Balance'});
+
+  return { columnSQL: columnSQL.join(',\n'), partitions }
+}
 
 
 export default function pl(options) {
@@ -9,7 +49,7 @@ export default function pl(options) {
     throw new Error(`ProfitLoss dataservice missing filters: [${missing.join(',')}]`);
   }
   const {startDate, endDate, ownerID} = filters;
-
+  let {columnSQL, partitions} = partitionBy(options, 'il', 'amount');
   const incomeQuery = `
   SELECT
     inc.type as accountName,
@@ -20,7 +60,7 @@ export default function pl(options) {
     mgl.acctGL as accountCode,
     'income' as accountType,
     mgl.type as accountGroup,
-    SUM(il.amount) as accountBalance
+    ${columnSQL}
   FROM ${dbPrefix}_income.iLedger il
     LEFT JOIN ${dbPrefix}_income.income inc on il.incomeID = inc.incomeID
     LEFT JOIN ${dbPrefix}_log.mapGL mgl on mgl.mapID = inc.mapID
@@ -39,7 +79,10 @@ export default function pl(options) {
   GROUP BY
     inc.type, mgl.acctGL, mgl.type`;
 
-const expenseQuery = `
+  const elPartition = partitionBy(options, 'el', 'payment');
+  columnSQL = elPartition.columnSQL;
+
+  const expenseQuery = `
   SELECT
     exp.type as accountName,
     CASE
@@ -49,7 +92,7 @@ const expenseQuery = `
     mgl.acctGL as accountCode,
     'expense' as accountType,
     mgl.type as accountGroup,
-    SUM(el.payment) as accountBalance
+    ${columnSQL}
   FROM ${dbPrefix}_expenses.eLedger el
     LEFT JOIN ${dbPrefix}_expenses.recurring r ON el.recurringID = r.recurringID
     LEFT JOIN ${dbPrefix}_assets.location loc ON loc.locationID=COALESCE(el.locationID,r.locationID)
@@ -70,7 +113,7 @@ const expenseQuery = `
   GROUP BY
     exp.type, mgl.acctGL, mgl.type`;
 
-const fullQuery = `SELECT *
+  const fullQuery = `SELECT *
   FROM (
     (${incomeQuery})
     UNION ALL
@@ -79,5 +122,15 @@ const fullQuery = `SELECT *
   ORDER BY
     accountType, accountGroup, accountCode`;
 
-  return db.query(fullQuery);
+  return db.query(fullQuery)
+    .then(data => ({
+      data,
+      count: data.length,
+      partitions
+    }));
+}
+
+
+function partitionData(data, partitions) {
+  return data.map()
 }

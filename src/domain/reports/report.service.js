@@ -1,10 +1,20 @@
 import Promise from 'bluebird';
-import renderGeneralListReport from './generalListTemplate';
+import GeneralListTemplate from './generalListTemplate';
 
-export function render(reportName, reportFormat, options, data) {
+export function render(reportName, reportFormat, options, dataSet) {
   reportName = 'general'; // this is the only report supported at this time
 
 
+  const report = new GeneralListTemplate(options, dataSet, reportFormat);
   return Promise.resolve()
-    .then(() => renderGeneralListReport(options, data, reportFormat) )
+    .then(() => report.render())
+}
+
+/**
+ * Update the report `columns` definition with the partitions
+ * data.  If `partition` is set in options, then the partitions
+ * returned from the dataset will override any template setting
+ */
+function updateColumnsWithPartition(options, partitions) {
+  if (!options.partition) return options.columns
 }
