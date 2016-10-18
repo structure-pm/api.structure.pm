@@ -29,6 +29,9 @@ export function payRent(tenantInfo, rent, ccInfo) {
     calculateOnlinePaymentFee(tenant, rent),
   ])
     .spread((tenant, ccPaymentMethodId, onlineFee) => {
+      console.log("TENANT", tenant);
+      console.log("ccPaymentMethodId", ccPaymentMethodId);
+      
       const Amount = rent + onlineFee;
       const transactionOptions = {
         Amount: Amount,
