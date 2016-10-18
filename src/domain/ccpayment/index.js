@@ -1,7 +1,12 @@
+import Promise from 'bluebird';
 import request from 'request-promise';
 import config from '../../config';
 import creditCardType from 'credit-card-type';
 import winston from 'winston';
+import StreamPayApi, {Customer, Address, Invoice, Transaction, CreditCardInfo} from './streamPay'
+
+const api = new StreamPayApi(config.ccpayment);
+
 
 const logFile = config.ccpayment.logFile;
 const logger = new (winston.Logger)({
@@ -11,34 +16,67 @@ const logger = new (winston.Logger)({
 });
 
 
-const BASE_URL = config.ccpayment.base_uri;
-const DEMO = config.ccpayment.demo;
-const StreamPayApi = config.ccpayment.StreamPayApi;
-const Origin = config.ccpayment.Origin;
-const CreditCardMethodId = config.ccpayment.CreditCardMethodId;
 
-const headers = {
-  Accept: 'application/json, text/plain, */*',
-  "Content-Type": 'application/json',
-  StreamPayApi: StreamPayApi,
-  Origin: Origin,
-};
 
-const requestOptions = {
-  qs: {demo: DEMO},
-  headers: headers,
-  json: true
+export function payRent(tenantInfo, rent, ccInfo) {
+
+  const tenant = new Customer(tenantInfo);
+  const creditCardInfo = new CreditCardInfo(ccInfo);
+
+  return Promise.all([
+    api.getOrAddCustomer(tenant),
+    api.getCCPaymentMethodId(),
+    calculateOnlinePaymentFee(tenant, rent),
+  ])
+    .spread((tenant, ccPaymentMethodId, onlineFee) => {
+      const Amount = rent + onlineFee;
+      const transactionOptions = {
+        Amount: Amount,
+        CreditCardInfo: creditCardInfo,
+        CustomerId: tenant.CustomerId,
+        MerchantGatewayPaymentMethodId: ccPaymentMethodId,
+        TransactionType: 'sale',
+      };
+      const transaction = new Transaction(transactionOptions);
+      return api.processTransaction(transaction)
+        .then(transaction => Object.assign(transaction, {rent, onlineFee}))
+    })
+    .then(transaction => {
+      // Do something to log failed transactions or check process
+      return transaction;
+    })
+    .catch(err => {
+      logger.error(`[ERROR CustomerID: ${tenant.CustomerId}] (${err.ErrorCode}) ${err.message}`);
+      throw(err);
+    });
+
 }
 
-function formatErrorResponse(errResponse, response, body) {
-  if (!errResponse.error || !errResponse.error.Reason) throw errResponse;
+export function calculateOnlinePaymentFee(tenant, rent) {
+  return 20;
+}
 
-  const message = `${errResponse.error.Reason} - ${errResponse.error.Detail}`;
-  const errCode = errResponse.error.ErrorCode;
-  const err = new Error(message);
-  err.status = errResponse.statusCode;
-  err.ErrorCode = errCode;
-  throw err;
+export function createRentInvoice(tenant, rent, onlineFee) {
+  const invDate = new Date();
+  const invoiceNumber = tenant.tenantID + "-" + invDate.getFullYear() + (invDate.getMonth() + 1) + invDate.getUTCDate();
+  return new Invoice({
+    BillingAddress: tenant.Address,
+    CustomerId: tenant.customerId,
+    InvoiceNumber: invoiceNumber,
+    Items: [
+      new InvoiceItem.createSimple('Monthly Rent', 'rent', rent),
+      new InvoiceItem.createSimple('Convenience Fee', 'onlineFee', onlineFee)
+    ]
+  })
+}
+
+// -----------------------------------------
+
+
+
+function getCCType(CCNumber) {
+  const ccType = creditCardType(ccInfo.CreditCardNumber || '');
+  return ccType[0].niceType;
 }
 
 function addCCType(transaction) {

@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import Column from '../../src/domain/reports/generalListTemplate/column';
 import Group from '../../src/domain/reports/generalListTemplate/group';
 
-describe.only('Group', () => {
+describe('Group', () => {
   describe("Creating", () => {
     it("Calculates aggregates", () => {
       const items = [

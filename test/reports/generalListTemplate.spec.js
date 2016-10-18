@@ -3,7 +3,7 @@ import handlebars from 'handlebars';
 import * as general from '../../src/domain/reports/generalListTemplate';
 import * as helpers from '../../src/domain/reports/generalListTemplate/helpers';
 
-describe.only("Reports | GeneralListTemplate", () => {
+describe("Reports | GeneralListTemplate", () => {
   describe.skip("normalizeGroups", () => {
     it("returns an array of groups", () => {
       const groupings = [{}, {}];

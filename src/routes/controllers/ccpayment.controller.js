@@ -2,14 +2,25 @@ import * as paymentService from '../../domain/ccpayment';
 
 export function makePayment(req, res, next) {
   const customer = req.body.customer;
-  const transaction = req.body.transaction;
-  paymentService.createCustomer(customer)
-    .then(customer => {
-      transaction.CustomerId = customer.CustomerId;
-      return paymentService.createSaleTransaction(transaction);
-    })
+  const creditCardInfo = req.body.creditCardInfo;
+  const rent = req.body.rent;
+
+  const requiredCustomerFields = ["tenantID", "Email", "FirstName", "LastName", "Phone", "Address"];
+  const missingCustomer = requiredCustomerFields.filter(fld => !customer.hasOwnProperty(fld));
+  if (missingCustomer.length) {
+    return next(new Error(`Missing fields [${missingCustomer.join(',')}] from customer data`));
+  }
+
+  paymentService.payRent(customer, rent, creditCardInfo)
     .then(transaction => res.json(transaction))
     .catch(next);
+  // paymentService.createCustomer(customer)
+  //   .then(customer => {
+  //     transaction.CustomerId = customer.CustomerId;
+  //     return paymentService.createSaleTransaction(transaction);
+  //   })
+  //   .then(transaction => res.json(transaction))
+  //   .catch(next);
 }
 
 
