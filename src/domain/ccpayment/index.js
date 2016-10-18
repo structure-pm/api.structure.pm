@@ -23,15 +23,18 @@ export function payRent(tenantInfo, rent, ccInfo) {
   const tenant = new Customer(tenantInfo);
   const creditCardInfo = new CreditCardInfo(ccInfo);
 
-  return Promise.all([
-    api.getOrAddCustomer(tenant),
-    api.getCCPaymentMethodId(),
-    calculateOnlinePaymentFee(tenant, rent),
-  ])
+  return api.getCCPaymentMethodId()
+    .then(method => {
+      return Promise.all([
+        api.getOrAddCustomer(tenant),
+        method,
+        calculateOnlinePaymentFee(tenant, rent),
+      ])
+    })
     .spread((tenant, ccPaymentMethodId, onlineFee) => {
       console.log("TENANT", tenant);
       console.log("ccPaymentMethodId", ccPaymentMethodId);
-      
+
       const Amount = rent + onlineFee;
       const transactionOptions = {
         Amount: Amount,
