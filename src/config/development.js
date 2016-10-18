@@ -1,3 +1,5 @@
+import path from 'path';
+
 const config = {
   port: 8081,
   dbPrefix: 'structudev',
