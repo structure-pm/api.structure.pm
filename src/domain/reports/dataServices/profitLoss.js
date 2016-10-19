@@ -47,13 +47,21 @@ export function partitionBy(options, prefix, sumColumn) {
           FROM ${dbPrefix}_assets.location
           WHERE ownerID='${ownerID}'`;
         return db.query(locationQuery).then(locations => {
+          // Entries not associated with a specific location
+          const name = "General";
+          const field = "partition_location_general";
+          columnSQL.push(`SUM(CASE WHEN loc.locationID IS NULL THEN ${prefix}.${sumColumn} ELSE 0 END) AS ${field}`)
+          partitions.push({field, name})
+
+          // Entries associated with a location
           locations.forEach((loc, idx) => {
             const field = `partition_location_${idx}`;
             const name = loc.name;
-            const col = `SUM(CASE WHEN ${prefix}.locationID = '${loc.locationID}' THEN ${prefix}.${sumColumn} ELSE 0 END) AS ${field}`;
+            const col = `SUM(CASE WHEN loc.locationID = '${loc.locationID}' THEN ${prefix}.${sumColumn} ELSE 0 END) AS ${field}`;
             columnSQL.push(col);
             partitions.push({field, name});
           });
+
           return [partitions, columnSQL];
         })
       } else {
@@ -158,7 +166,7 @@ export default function pl(options) {
       ) as entries
       ORDER BY
         accountType, accountGroup, accountCode`;
-
+        
       return db.query(fullQuery)
         .then(data => ({
           data,
