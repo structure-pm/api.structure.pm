@@ -3,7 +3,10 @@ import * as paymentService from '../../domain/ccpayment';
 export function makePayment(req, res, next) {
   const customer = req.body.customer;
   const creditCardInfo = req.body.creditCardInfo;
-  const rent = req.body.rent;
+  const rent = (typeof req.body.rent === 'string') ? parseFloat(req.body.rent) : req.body.rent;
+
+
+  if (!customer.LastName) customer.LastName = "(none)";
 
   const requiredCustomerFields = ["tenantID", "Email", "FirstName", "LastName", "Phone", "Address"];
   const missingCustomer = requiredCustomerFields.filter(fld => !customer.hasOwnProperty(fld));

@@ -9,9 +9,7 @@ export default function Customer(options) {
     options
   );
 
-  this.LastName = this.LastName || '';
-
-  if (!(this.Address instanceof Address)) {
+  if (this.Address && !(this.Address instanceof Address)) {
     this.Address = new Address(this.Address);
   }
 

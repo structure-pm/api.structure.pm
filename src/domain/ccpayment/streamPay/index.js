@@ -65,15 +65,13 @@ Api.prototype.post = function(uri, data, options) {
   // if (typeof data === 'object') data = JSON.stringify(data);
   options = Object.assign({}, options, {body: data});
 
-  return this.request('POST', uri, options).catch(err => {
-    throw this.formatErrorResponse(err);
-  } );
+  return this.request('POST', uri, options);
 }
 
 Api.prototype.formatErrorResponse = function(errResponse) {
   if (!errResponse.error || !errResponse.error.Reason) return errResponse;
 
-  const message = `${errResponse.error.Reason} - ${errResponse.error.Detail}`;
+  const message = `[STREAMPAY] ${errResponse.error.Reason} - ${errResponse.error.Detail}`;
   const errCode = errResponse.error.ErrorCode;
   const err = new Error(message);
   err.status = errResponse.statusCode;
@@ -96,9 +94,9 @@ Api.prototype.getCCPaymentMethodId = function() {
 }
 
 
-Api.prototype.getOrAddCustomer = function(customer, searchBy) {
-  searchBy = searchBy || ['Email'];
-  const url = this.buildURL('customers/search')
+Api.prototype.getOrAddCustomer = function(customer) {
+  const searchBy = ['Email', 'FirstName', 'LastName'];
+  const url = this.buildURL('customers/searchAND')
   const data = _pick(customer, searchBy);
   const qs = {page: 1, size: 1};
 
@@ -127,5 +125,5 @@ Api.prototype.addInvoice = function(invoice) {
 Api.prototype.processTransaction = function(transaction) {
   const url = this.buildURL('transactions/');
   return this.post(url, transaction)
-    .then(returnedTransaction => new Transaction(returnedTransaction))
+    .then(returnedTransaction => new Transaction(returnedTransaction));
 }

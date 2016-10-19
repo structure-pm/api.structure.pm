@@ -25,22 +25,20 @@ export function payRent(tenantInfo, rent, ccInfo) {
 
   return api.getCCPaymentMethodId()
     .then(method => {
-      console.log("GOT METHOD ID", method);
       return Promise.all([
-        api.getOrAddCustomer(tenant),
+        api.addCustomer(tenant),
         method,
         calculateOnlinePaymentFee(tenant, rent),
       ])
     })
     .spread((tenant, ccPaymentMethodId, onlineFee) => {
-
       const Amount = rent + onlineFee;
       const transactionOptions = {
         Amount: Amount,
         CreditCardInfo: creditCardInfo,
         CustomerId: tenant.CustomerId,
         MerchantGatewayPaymentMethodId: ccPaymentMethodId,
-        TransactionType: 'sale',
+        TransactionTypeName: 'sale',
       };
       const transaction = new Transaction(transactionOptions);
       return api.processTransaction(transaction)
