@@ -1,3 +1,4 @@
+import Promise from 'bluebird';
 import * as paymentService from '../../domain/ccpayment';
 
 export function makePayment(req, res, next) {
@@ -15,6 +16,7 @@ export function makePayment(req, res, next) {
   }
 
   paymentService.payRent(customer, rent, creditCardInfo)
+    .then(transaction => {console.log("SUCCESSFUL TRANS", transaction); return transaction;})
     .then(transaction => res.json(transaction))
     .catch(next);
   // paymentService.createCustomer(customer)
