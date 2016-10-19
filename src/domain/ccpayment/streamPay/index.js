@@ -46,6 +46,7 @@ Api.prototype.request = function(method, uri, options = {}) {
   const qs = Object.assign({}, options.qs || {}, {demo: this.isDemo});
   const json = true;
 
+  console.log("REQUESTING==============");
   console.log(Object.assign(
     { method, uri },
     this.defaultRequestOptions,
@@ -69,7 +70,9 @@ Api.prototype.post = function(uri, data, options) {
   if (typeof data === 'object') data = JSON.stringify(data);
   options = Object.assign({}, options, {body: data});
 
-  return this.request('POST', uri, options)
+  return this.request('POST', uri, options).catch(err => {
+    throw this.formatErrorResponse(err);
+  } );
 }
 
 Api.prototype.formatErrorResponse = function(errResponse) {
@@ -87,14 +90,14 @@ Api.prototype.formatErrorResponse = function(errResponse) {
 // ==== STREAMPAY METHODS
 // =============================================================================
 Api.prototype.listPaymentMethods = function() {
-  const url = this.buildURL('merchantgatewaypaymentmethods');
+  const url = this.buildURL('merchantgatewaypaymentmethods/');
   return this.get(url);
 }
 
 Api.prototype.getCCPaymentMethodId = function() {
   return this.listPaymentMethods()
-    .then(methods => methods.find(m => m.PaymentMethods.Name.toLowerCase() === 'credit card'))
-    .then(method => m.MerchantGatewayPaymentMethodId)
+    .then(methods => methods.find(m => m.PaymentMethod.Name.toLowerCase() === 'credit card'))
+    .then(method => method.MerchantGatewayPaymentMethodId)
 }
 
 
@@ -111,13 +114,13 @@ Api.prototype.getOrAddCustomer = function(customer, searchBy) {
 }
 
 Api.prototype.addCustomer = function(customer) {
-  const url = this.buildURL('customers');
+  const url = this.buildURL('customers/');
   return this.post(url, customer)
     .then(returnedCustomer => new Customer(returnedCustomer));
 }
 
 Api.prototype.addInvoice = function(invoice) {
-  const url = this.buildURL('invoices');
+  const url = this.buildURL('invoices/');
   return this.post(url, invoice)
     .then(newInvoice => {
       newInvoice.Items = newInvoice.Items.map(i => new InvoiceItem(i));
@@ -126,7 +129,7 @@ Api.prototype.addInvoice = function(invoice) {
 }
 
 Api.prototype.processTransaction = function(transaction) {
-  const url = this.buildURL('transactions');
+  const url = this.buildURL('transactions/');
   return this.post(url, transaction)
     .then(returnedTransaction => new Transaction(returnedTransaction))
 }

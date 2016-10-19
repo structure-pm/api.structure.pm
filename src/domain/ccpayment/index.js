@@ -25,6 +25,7 @@ export function payRent(tenantInfo, rent, ccInfo) {
 
   return api.getCCPaymentMethodId()
     .then(method => {
+      console.log("GOT METHOD ID", method);
       return Promise.all([
         api.getOrAddCustomer(tenant),
         method,
@@ -32,8 +33,6 @@ export function payRent(tenantInfo, rent, ccInfo) {
       ])
     })
     .spread((tenant, ccPaymentMethodId, onlineFee) => {
-      console.log("TENANT", tenant);
-      console.log("ccPaymentMethodId", ccPaymentMethodId);
 
       const Amount = rent + onlineFee;
       const transactionOptions = {
