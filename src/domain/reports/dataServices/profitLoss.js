@@ -100,7 +100,9 @@ export default function pl(options) {
       SELECT
         inc.type as accountName,
         CASE
-          WHEN inc.type REGEXP 'capital|mortgage' THEN 'Capital Income/Expense'
+          WHEN
+            inc.type REGEXP 'capital|mortgage' AND not inc.type REGEXP 'mortgage interest'
+          THEN 'Capital Income/Expense'
           ELSE 'Operating Income/Expense'
         END as accountOperating,
         mgl.acctGL as accountCode,
@@ -130,12 +132,17 @@ export default function pl(options) {
       SELECT
         exp.type as accountName,
         CASE
-          WHEN exp.type REGEXP 'capital|mortgage' THEN 'Capital Income/Expense'
+          WHEN exp.type REGEXP 'capital|mortgage' AND not exp.type REGEXP 'mortgage interest'
+          THEN 'Capital Income/Expense'
           ELSE 'Operating Income/Expense'
           END as accountOperating,
         mgl.acctGL as accountCode,
         CASE WHEN mgl.type REGEXP 'Income' THEN 'income' ELSE 'expense' END as accountType,
-        mgl.type as accountGroup,
+        CASE
+          WHEN exp.type = 'Mortgage Interest' THEN 'Indirect Expense'
+          WHEN exp.type REGEXP 'mortgage' THEN 'Debt Service'
+          ELSE mgl.type
+          END as accountGroup,
         'debit' as normalBalance,
         ${expensePartition.columnSQL}
       FROM ${dbPrefix}_expenses.eLedger el
@@ -166,7 +173,7 @@ export default function pl(options) {
       ) as entries
       ORDER BY
         accountType, accountGroup, accountCode`;
-        
+
       return db.query(fullQuery)
         .then(data => ({
           data,
