@@ -46,28 +46,23 @@ Api.prototype.request = function(method, uri, options = {}) {
   const qs = Object.assign({}, options.qs || {}, {demo: this.isDemo});
   const json = true;
 
-  console.log("REQUESTING==============");
-  console.log(Object.assign(
-    { method, uri },
-    this.defaultRequestOptions,
-    options,
-    {qs, json}      // required Request options
-  ))
 
-  return request(Object.assign(
+  const reqOptions = Object.assign(
     { method, uri },
     this.defaultRequestOptions,
     options,
     {qs, json}      // required Request options
-  )).catch(err => {
-    throw this.formatErrorResponse(err);
-  } );
+  );
+
+
+  return request(reqOptions)
+    .catch(err => { throw this.formatErrorResponse(err); } );
 }
 
 Api.prototype.get = function(uri, options) { return this.request('GET', uri, options); }
 
 Api.prototype.post = function(uri, data, options) {
-  if (typeof data === 'object') data = JSON.stringify(data);
+  // if (typeof data === 'object') data = JSON.stringify(data);
   options = Object.assign({}, options, {body: data});
 
   return this.request('POST', uri, options).catch(err => {
@@ -106,6 +101,7 @@ Api.prototype.getOrAddCustomer = function(customer, searchBy) {
   const url = this.buildURL('customers/search')
   const data = _pick(customer, searchBy);
   const qs = {page: 1, size: 1};
+
   return this.post(url, data, {qs})
     .then(customers => {
       if (customers.length) return new Customer(customers[0]);
