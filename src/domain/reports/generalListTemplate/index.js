@@ -25,6 +25,7 @@ export default function GeneralListTemplate(options, dataset, format="html") {
   this.items = dataset.data || options.data;
   this.renderReport = templateSets[format];
   this.groupings = options.groupBy;
+  this.rootGrouping = options.root;
 
   // Create a columns definition collection
   this.columns = dataset.partitions.map((part, idx) => new Column(part.name, part.field, idx, options.columnDetail));
@@ -40,9 +41,10 @@ export default function GeneralListTemplate(options, dataset, format="html") {
 GeneralListTemplate.prototype.render = function()  {
 
   // Recursively group and sort data
-  this.root = new Group('root', this.items, this.columns, {
-    groupings: this.groupings,
-  })
+  this.root = new Group('root', this.items, this.columns, Object.assign(
+    { groupings: this.groupings, },
+    this.rootGrouping || {}
+  ));
 
 
   const reportContext = {

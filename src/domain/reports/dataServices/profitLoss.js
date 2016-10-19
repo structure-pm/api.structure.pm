@@ -47,13 +47,21 @@ export function partitionBy(options, prefix, sumColumn) {
           FROM ${dbPrefix}_assets.location
           WHERE ownerID='${ownerID}'`;
         return db.query(locationQuery).then(locations => {
+          // Entries not associated with a specific location
+          const name = "General";
+          const field = "partition_location_general";
+          columnSQL.push(`SUM(CASE WHEN loc.locationID IS NULL THEN ${prefix}.${sumColumn} ELSE 0 END) AS ${field}`)
+          partitions.push({field, name})
+
+          // Entries associated with a location
           locations.forEach((loc, idx) => {
             const field = `partition_location_${idx}`;
             const name = loc.name;
-            const col = `SUM(CASE WHEN ${prefix}.locationID = '${loc.locationID}' THEN ${prefix}.${sumColumn} ELSE 0 END) AS ${field}`;
+            const col = `SUM(CASE WHEN loc.locationID = '${loc.locationID}' THEN ${prefix}.${sumColumn} ELSE 0 END) AS ${field}`;
             columnSQL.push(col);
             partitions.push({field, name});
           });
+
           return [partitions, columnSQL];
         })
       } else {
@@ -92,7 +100,9 @@ export default function pl(options) {
       SELECT
         inc.type as accountName,
         CASE
-          WHEN inc.type REGEXP 'capital|mortgage' THEN 'Capital Income/Expense'
+          WHEN
+            inc.type REGEXP 'capital|mortgage' AND not inc.type REGEXP 'mortgage interest'
+          THEN 'Capital Income/Expense'
           ELSE 'Operating Income/Expense'
         END as accountOperating,
         mgl.acctGL as accountCode,
@@ -122,12 +132,17 @@ export default function pl(options) {
       SELECT
         exp.type as accountName,
         CASE
-          WHEN exp.type REGEXP 'capital|mortgage' THEN 'Capital Income/Expense'
+          WHEN exp.type REGEXP 'capital|mortgage' AND not exp.type REGEXP 'mortgage interest'
+          THEN 'Capital Income/Expense'
           ELSE 'Operating Income/Expense'
           END as accountOperating,
         mgl.acctGL as accountCode,
         CASE WHEN mgl.type REGEXP 'Income' THEN 'income' ELSE 'expense' END as accountType,
-        mgl.type as accountGroup,
+        CASE
+          WHEN exp.type = 'Mortgage Interest' THEN 'Indirect Expense'
+          WHEN exp.type REGEXP 'mortgage' THEN 'Debt Service'
+          ELSE mgl.type
+          END as accountGroup,
         'debit' as normalBalance,
         ${expensePartition.columnSQL}
       FROM ${dbPrefix}_expenses.eLedger el
