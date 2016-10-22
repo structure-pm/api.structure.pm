@@ -2,6 +2,7 @@ import path from 'path';
 
 const config = {
   port: 8081,
+  host: 'api-dev.structure.pm',
   dbPrefix: 'structudev',
   db: {
     connectionLimit: 100,

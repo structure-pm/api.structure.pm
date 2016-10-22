@@ -2,6 +2,7 @@ import path from 'path';
 
 const config = {
   port: 8080,
+  host: 'api.structure.pm',
   db: {
     connectionLimit: 100,
     host: 'localhost',

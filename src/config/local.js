@@ -1,6 +1,7 @@
 import path from 'path';
 const config = {
   port: 8080,
+  host: 'localhost:8080',
   dbPrefix: 'structudev',
   db: {
     connectionLimit: 100,

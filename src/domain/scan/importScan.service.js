@@ -6,10 +6,12 @@ import createBillRepository from '../expenses/bill.repository';
 import createLocationRepository from '../assets/location.repository';
 import createUnitRepository from '../assets/unit.repository';
 
+import config from '../../config'
+
 const RESULT_UNKNOWN_ACCOUNT = 'RESULT_UNKNOWN_ACCOUNT';
 const RESULT_BILL_CREATED = "RESULT_BILL_CREATED";
 
-const API_HOST = (process.env.NODE_ENV === 'production') ? 'api.structure.pm' : 'api-dev.structure.pm';
+const API_HOST = config.host;
 
 /**
  * {
