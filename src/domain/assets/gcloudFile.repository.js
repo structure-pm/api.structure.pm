@@ -2,6 +2,7 @@ import * as db from '../../db';
 
 
 const gcfile = {};
+export default gcfile;
 
 gcfile.get = function(id) {
   const selectQuery = `SELECT * FROM ${gcfileTable} where id = ? `;

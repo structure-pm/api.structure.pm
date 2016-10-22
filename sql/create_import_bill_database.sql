@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS structudev_imports.imported_account_asset (
   accountNumber VARCHAR(255) NOT NULL,
   vendorID INT NOT NULL,
   expenseID INT NOT NULL,
-  assetType ENUM('manager', 'owner', 'location', 'unit'),
+  assetType VARCHAR(50),
   assetID VARCHAR(255),
   createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   modifiedAt TIMESTAMP NOT NULL

@@ -10,7 +10,7 @@ Assets.saveBufferToGFile = function(gfileData, buffer) {
   const {assetType, assetID, filename, mimeType} = gfileData;
   const cloudFilename = `${assetType}/${assetID}/${filename}`;
 
-  return gcloud.saveBufferToCloud(couldFilename, mimeType, buffer)
+  return gcloud.saveBufferToCloud(cloudFilename, mimeType, buffer)
     .then(publicUrl => gcloudFile.create({assetType, assetID, filename, mimeType}))
     .then(gfile => gcloudFile.save(gfile));
 }

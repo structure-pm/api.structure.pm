@@ -19,7 +19,7 @@ const Bill = {
 
   createBillForUnit(unitID, billData, options) {
     let Units = createUnitRepository();
-    Units.findById(unitID).then(unit => {
+    return Units.findById(unitID).then(unit => {
       if (!unit) return Promise.reject(new Error(`Unit ${unitID} not found`))
 
       billData = Object.assign({}, billData, {
@@ -34,7 +34,7 @@ const Bill = {
 
   createBillForLocation(locationID, billData, options) {
     let Locations = createLocationRepository();
-    Locations.findById(locationID).then(location => {
+    return Locations.findById(locationID).then(location => {
       if (!location) return Promise.reject(new Error(`Location ${locationID} not found`))
 
       billData = Object.assign({}, billData, {
@@ -92,13 +92,8 @@ const Bill = {
       )`;
     const selectQuery = `SELECT * FROM ${eLedgerTable} WHERE entryID=?`;
     return db.query(insertQuery, values, options)
-      .then(res => {
-        if (res.insertId) {
-          return db.query(selectQuery, [res.insertId])
-        } else {
-          return res
-        }
-      });
+      .then(res => db.query(selectQuery, [res.insertId]))
+      .then(rows => (rows && rows.length) ? rows[0] : null);
   }
 };
 

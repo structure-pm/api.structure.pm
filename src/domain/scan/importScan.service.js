@@ -61,11 +61,11 @@ const ImportScanService = {
           // Create an expense entry for the scanned data
           return this.createBillFromScan(scanData, asset)
             .then(bill => {
-              const assetType = 'unknownAccount',
-                    assetID = unknownAccount.id;
+              const assetType = 'eLedger',
+                    assetID = bill.entryID;
               return {
                 result: this.RESULT_BILL_CREATED,
-                message: "Bill Created",
+                message: "Bill Created!",
                 data: bill,
                 scanUploadURL: uploadUrl(assetType, assetID, scanData.DueDate)
               };
@@ -127,13 +127,11 @@ const ImportScanService = {
 
   createUnknownAccount(scanData) {
     let {UnknownAccounts} = this.repositories;
-    const filename = filenameForUnknown(scanData.AccountNumber, scanData.DueDate);
 
     return UnknownAccounts.create({
       accountNumber: scanData.AccountNumber,
       vendorID: scanData.CreditorNumber,
       scanData: scanData,
-      filename: filename,
     })
   }
 };
@@ -149,7 +147,7 @@ function scanFilename(dueDate) {
 function uploadUrl(assetType, assetID, dueDate) {
   const proto = 'https';
   const filename = scanFilename(dueDate);
-  `${proto}://${API_HOST}/scan/upload?assetType=${assetType}&assetID=${assetID}&filename=${filename}`
+  return `${proto}://${API_HOST}/scan/upload?assetType=${assetType}&assetID=${assetID}&filename=${filename}`
 }
 
 

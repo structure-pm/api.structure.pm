@@ -4,14 +4,13 @@ import Promise from 'bluebird';
 const UnknownAccount = {
   create(uaData, options) {
     const unknownAccountsTable = `${db.getPrefix()}_imports.imported_unknown_account`;
-    const insertFields = ['accountNumber', 'vendorID', 'scanData', 'modifiedAt', 'filename'];
+    const insertFields = ['accountNumber', 'vendorID', 'scanData', 'modifiedAt'];
     const placeHolders = insertFields.map(fld => '?').join(',');
     const values = [
       uaData.accountNumber,
       uaData.vendorID,
       JSON.stringify(uaData.scanData),
       new Date(),
-      uaData.filename
     ];
     const query = `
       INSERT INTO ${unknownAccountsTable} (
@@ -19,7 +18,11 @@ const UnknownAccount = {
       ) VALUES (
         ${placeHolders}
       ); `;
-    return db.query(query, values, options);
+    const selectQuery = `SELECT * FROM ${unknownAccountsTable} WHERE id=?`;
+
+    return db.query(query, values, options)
+      .then(res => db.query(selectQuery, [res.insertId]))
+      .then(rows => (rows && rows.length) ? rows[0] : null);
   },
 
   destroy(id) {
