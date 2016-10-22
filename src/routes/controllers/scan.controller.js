@@ -4,12 +4,39 @@ import createAccountAssetService from '../../domain/scan/accountAsset.service';
 import createImportScanService from '../../domain/scan/importScan.service';
 import createVendorRepository from '../../domain/expenses/vendor.repository';
 
+import spmAssets from '../../domain/assets';
+
 export function importScan(req, res, next) {
   let importScan = createImportScanService();
   importScan.importScan(req.body)
     .then(results => {
       return res.json(results);
     })
+    .catch(next);
+}
+
+
+export function handleScanUpload(req, res, next) {
+  if (!req.file) return next(new Error('No file present'));
+
+  const assetType = req.query.assetType,
+        assetID = req.query.assetID,
+        filename = req.query.filename,
+        filebuffer = req.file.buffer,
+        mimeType = req.file.mimetype;
+
+  if (!assetType) return next(new Error('Missing `assetType` from request'));
+  if (!assetID) return next(new Error('Missing `assetID` from request'));
+  if (!filename) return next(new Error('Missing `filename` from request'));
+  if (!filebuffer) return next(new Error('No file was uploaded (no filebuffer)'));
+
+  const gfileData = {
+    assetType, assetID, filename, mimeType,
+    description: 'Scanned bill pdf'
+  }
+
+  spmAssets.saveBufferToGFile(gfileData, filebuffer)
+    .then(result => res.json(result))
     .catch(next);
 }
 

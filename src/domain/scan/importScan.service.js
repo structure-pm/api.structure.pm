@@ -9,6 +9,8 @@ import createUnitRepository from '../assets/unit.repository';
 const RESULT_UNKNOWN_ACCOUNT = 'RESULT_UNKNOWN_ACCOUNT';
 const RESULT_BILL_CREATED = "RESULT_BILL_CREATED";
 
+const API_HOST = (process.env.NODE_ENV === 'production') ? 'api.structure.pm' : 'api-dev.structure.pm';
+
 /**
  * {
  *   "CustomerName": "Joshua Lyndley",
@@ -41,26 +43,31 @@ const ImportScanService = {
       .then(() => AccountAssets.findByAccountNumber(scanData.AccountNumber, scanData.CreditorNumber))
       .then(asset => {
         if (!asset) {
-          // save the data in the unknownAccounts table
-          return UnknownAccounts.create({
-            accountNumber: scanData.AccountNumber,
-            vendorID: scanData.CreditorNumber,
-            scanData: scanData
-          })
-          .then(unknownAccount => ({
-            result: this.RESULT_UNKNOWN_ACCOUNT,
-            message: "Unknown AccountNumber queued for review",
-            data: {unknownAccountId: unknownAccount.id}
-          }));
 
+          return this.createUnknownAccount(scanData)
+            .then(unknownAccount => {
+              const assetType = 'unknownAccount',
+                    assetID = unknownAccount.id;
+              return {
+                result: this.RESULT_UNKNOWN_ACCOUNT,
+                message: "Unknown AccountNumber queued for review",
+                data: {unknownAccountId: unknownAccount.id},
+                scanUploadURL: uploadUrl(assetType, assetID, scanData.DueDate)
+              };
+            });
         } else {
           // Create an expense entry for the scanned data
           return this.createBillFromScan(scanData, asset)
-          .then(bill => ({
-            result: this.RESULT_BILL_CREATED,
-            message: "Bill Created",
-            data: bill
-          }));
+            .then(bill => {
+              const assetType = 'unknownAccount',
+                    assetID = unknownAccount.id;
+              return {
+                result: this.RESULT_BILL_CREATED,
+                message: "Bill Created",
+                data: bill,
+                scanUploadURL: uploadUrl(assetType, assetID, scanData.DueDate)
+              };
+            })
         }
       });
 
@@ -91,6 +98,7 @@ const ImportScanService = {
    * asset data
    */
   createBillFromScan(scanData, assetData, options) {
+
     return Promise.try(() => {
       let Bills = this.repositories.Bills;
       let billData = {
@@ -103,8 +111,6 @@ const ImportScanService = {
       }
 
       switch (assetData.assetType) {
-        case 'manager':
-          return Bills.createBillForManager(assetData.assetID, billData, options);
         case 'owner':
           return Bills.createBillForOwner(assetData.assetID, billData, options);
         case 'location':
@@ -114,11 +120,35 @@ const ImportScanService = {
         default:
           return Promise.reject(new Error(`Unrecognized assetType '${assetData.assetType}'`));
       }
-    });
+    })
   },
 
+  createUnknownAccount(scanData) {
+    let {UnknownAccounts} = this.repositories;
+    const filename = filenameForUnknown(scanData.AccountNumber, scanData.DueDate);
+
+    return UnknownAccounts.create({
+      accountNumber: scanData.AccountNumber,
+      vendorID: scanData.CreditorNumber,
+      scanData: scanData,
+      filename: filename,
+    })
+  }
 };
 
+
+
+function scanFilename(dueDate) {
+  dueDate = dueDate || moment().format('YYYY-MM-DD-HH-mm');
+  dueDate = dueDate.replace(/\//g,'-');
+  return `scanned-bill-${dueDate}.pdf`;
+}
+
+function uploadUrl(assetType, assetID, dueDate) {
+  const proto = 'https';
+  const filename = scanFilename(dueDate);
+  `${proto}://${API_HOST}/scan/upload?assetType=${assetType}&assetID=${assetID}&filename=${filename}`
+}
 
 
 

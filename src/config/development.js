@@ -19,6 +19,11 @@ const config = {
     CreditCardMethodId: 184,
     demo: true,
     logFile: path.resolve(__dirname,'../..', 'ccpayment.log'),
+  },
+  gcloud: {
+    GOOGLE_PROJECT_ID: 'structure-pm',
+    GOOGLE_KEYFILE: path.resolve(__dirname, '../../gcloud-credentials.json'),
+    GOOGLE_DEFAULT_BUCKET: 'structure-pm-assets-dev'
   }
 }
 export default config;

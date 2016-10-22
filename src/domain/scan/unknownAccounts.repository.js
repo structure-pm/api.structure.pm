@@ -4,13 +4,14 @@ import Promise from 'bluebird';
 const UnknownAccount = {
   create(uaData, options) {
     const unknownAccountsTable = `${db.getPrefix()}_imports.imported_unknown_account`;
-    const insertFields = ['accountNumber', 'vendorID', 'scanData', 'modifiedAt'];
+    const insertFields = ['accountNumber', 'vendorID', 'scanData', 'modifiedAt', 'filename'];
     const placeHolders = insertFields.map(fld => '?').join(',');
     const values = [
       uaData.accountNumber,
       uaData.vendorID,
       JSON.stringify(uaData.scanData),
-      new Date()
+      new Date(),
+      uaData.filename
     ];
     const query = `
       INSERT INTO ${unknownAccountsTable} (

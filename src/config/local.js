@@ -1,3 +1,4 @@
+import path from 'path';
 const config = {
   port: 8080,
   dbPrefix: 'structudev',
@@ -10,6 +11,11 @@ const config = {
     database: undefined,
     debug: false,
   },
+  gcloud: {
+    GOOGLE_PROJECT_ID: 'structure-pm',
+    GOOGLE_KEYFILE: path.resolve(__dirname, '../../gcloud-credentials.json'),
+    GOOGLE_DEFAULT_BUCKET: 'structure-pm-assets-dev'
+  }
 
 }
 export default config;

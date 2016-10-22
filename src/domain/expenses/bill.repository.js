@@ -24,7 +24,7 @@ const Bill = {
 
       billData = Object.assign({}, billData, {
         managerID : null,
-        ownerID   :unit.ownerID,
+        ownerID   : unit.ownerID,
         locationID: unit.locationID,
         unitID    : unit.unitID,
       });

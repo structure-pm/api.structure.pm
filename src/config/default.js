@@ -13,7 +13,8 @@ const config = {
     CreditCardMethodId: 184,
     demo: true,
     logFile: path.resolve(__dirname,'../..', 'ccpayment.log'),
-  }
+  },
+  
 }
 
 export default config;
