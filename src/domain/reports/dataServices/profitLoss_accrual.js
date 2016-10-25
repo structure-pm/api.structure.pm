@@ -116,13 +116,14 @@ export default function pl(options) {
         LEFT JOIN ${dbPrefix}_assets.lease lse on lse.leaseID = il.leaseID
         LEFT JOIN ${dbPrefix}_assets.unit u on u.unitID = lse.unitID
         LEFT JOIN ${dbPrefix}_assets.location loc on loc.locationID = u.locationID
+        LEFT JOIN ${dbPrefix}_income.invoices inv on inv.invoiceID = il.invoiceID
         LEFT JOIN ${dbPrefix}_assets.deed d on d.locationID = loc.locationID
-          and il.dateStamp BETWEEN d.startDate AND COALESCE(d.endDate, '${endDate}')
+          and COALESCE(inv.dueDate, inv.invDate, il.dateStamp) BETWEEN d.startDate AND COALESCE(d.endDate, '${endDate}')
           and d.ownerID = COALESCE(il.accountID, loc.ownerID)
       WHERE
         COALESCE(il.accountID, loc.ownerID) = '${ownerID}'
-        AND il.dateStamp BETWEEN '${startDate}' AND '${endDate}'
-        AND (loc.locationID is NULL OR il.dateStamp >=d.startDate)
+        AND COALESCE(inv.dueDate, inv.invDate, il.dateStamp) BETWEEN '${startDate}' AND '${endDate}'
+        AND (loc.locationID is NULL OR COALESCE(inv.dueDate, inv.invDate, il.dateStamp) >=d.startDate)
         AND il.incomeID IS NOT NULL
         and mgl.sIncome = 1
       GROUP BY
