@@ -96,6 +96,35 @@ export default function pl(options) {
     partitionBy(options, 'el', 'payment'),
   ])
     .spread((incomePartition, expensePartition) => {
+      const accruedRentQuery =  `SELECT
+        (SELECT inc.type from ${dbPrefix}_income.income where incomeID=1) as accountName,
+        'Operating Income/Expense' as accountOperating,
+        SUM((
+          TIMESTAMPDIFF(
+            MONTH,
+            DATE_FORMAT((GREATEST(lse.startDate, ${startDate}) - INTERVAL 1 DAY), '%Y-%m-01'),-- Minus one day - first of month
+            DATE_FORMAT(LEAST(lse.endDate, ${endDate}), '%Y-%m-01'))   -- first of month
+          +
+          CASE WHEN lse.startDate >= ${startDate} AND DAY(lse.startDate) != 1
+            THEN 1 - (DAY(lse.startDate) / DAY(LAST_DAY(lse.startDate)))
+            ELSE 0
+            END
+          -
+          CASE WHEN lse.endDate <= ${endDate} AND DAY(lse.endDate) != DAY(LAST_DAY(lse.endDate))
+            THEN 1 - (DAY(lse.endDate) / DAY(LAST_DAY(lse.endDate)))
+            ELSE 0
+            END
+        ) * lse.ren)t as accruedRent
+      FROM
+        ${dbPrefix}_assets.lease lse
+        JOIN ${dbPrefix}_assets.unit u on u.unitID = lse.unitID
+        JOIN ${dbPrefix}_assets.location loc on loc.locationID = u.locationID
+      WHERE
+        loc.ownerID = '${ownerID}'
+        AND (lse.endDate > ${startDate} OR lse.endDate IS NULL)
+        AND lse.startDate < ${endDate}`;
+
+
       const incomeQuery = `
       SELECT
         inc.type as accountName,
@@ -104,7 +133,7 @@ export default function pl(options) {
             inc.type REGEXP 'capital|mortgage' AND not inc.type REGEXP 'mortgage interest'
           THEN 'Capital Income/Expense'
           ELSE 'Operating Income/Expense'
-        END as accountOperating,
+          END as accountOperating,
         mgl.acctGL as accountCode,
         'income' as accountType,
         mgl.type as accountGroup,
@@ -125,9 +154,11 @@ export default function pl(options) {
         AND COALESCE(inv.dueDate, inv.invDate, il.dateStamp) BETWEEN '${startDate}' AND '${endDate}'
         AND (loc.locationID is NULL OR COALESCE(inv.dueDate, inv.invDate, il.dateStamp) >=d.startDate)
         AND il.incomeID IS NOT NULL
+        AND il.incomeID !=1 -- no rent payments
         and mgl.sIncome = 1
       GROUP BY
         inc.type, mgl.acctGL, mgl.type`;
+
 
       const expenseQuery = `
       SELECT
