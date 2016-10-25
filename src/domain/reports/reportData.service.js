@@ -1,7 +1,10 @@
-import getProfitLoss from './dataServices/profitLoss';
+import ProfitLossCash from './dataServices/profitLoss_cash';
+import ProfitLossAccrual from './dataServices/profitLoss_accrual';
 
 const dataServices = {
-  profitloss: getProfitLoss,
+  profitloss: ProfitLossCash,
+  profitloss_cash: ProfitLossCash,
+  profitloss_accrual: ProfitLossCash,
 };
 
 
