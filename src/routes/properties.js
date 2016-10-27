@@ -7,5 +7,8 @@ export default function(config) {
   router.get('/location', properties.getLocation);
   router.get('/unit', properties.getUnit);
 
+  router.get('/units', properties.getUnit);
+  router.get('/units/:unitID', properties.getUnit);
+
   return router;
 }

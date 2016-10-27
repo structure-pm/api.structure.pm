@@ -8,7 +8,7 @@ let prefix = null;
 
 export function init(config, options) {
   if (initialized && !options.force) return pool;
-  
+
   prefix = config.dbPrefix;
   pool =    mysql.createPool(config.db);
   initialized = true;
@@ -101,4 +101,8 @@ export function rollback(trans) {
 export function getPrefix() {
   if (!initialized) throw new Error("DB Connection must be initialized before use.");
   return prefix;
+}
+
+export function escape(val) {
+  return mysql.escape(val);
 }

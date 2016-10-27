@@ -13,14 +13,24 @@ const Unit = {
     const locationTable = `${db.getPrefix()}_assets.location`;
     const ownerTable = `${db.getPrefix()}_assets.owner`;
 
-    const whereClauses = Object.keys(where).map(key => `${key}=?`)
+    // Unless specified, default to active units only
+    where.active = (where.hasOwnProperty('active')) ? where.active : 1;
+
+    // Construct the where clause
+    const whereClauses = [];
+    if (where.unitID) whereClauses.push(`unit.unitID=${db.escape(where.unitID)}`);
+    if (where.locationID) whereClauses.push(`unit.locationID='${db.escape(where.locationID)}'`);
+    if (where.ownerID) whereClauses.push(`location.ownerID='${db.escape(where.ownerID)}'`);
+    if (where.zoneID) whereClauses.push(`location.zoneID=${db.escape(where.zoneID)}`);
     if (!options.includeDNM) {
       whereClauses.push("location.shortHand NOT LIKE '%DNM%'");
     }
+
+    const offset = options.offset || 0;
+    const limit = options.limit || 50;
+
     const whereClause = (whereClauses.length) ? 'WHERE ' + whereClauses.join(' AND ') : '';
-    const values = Object.keys(where).map(key => where[key]);
-
-
+    const limitClause = `LIMIT ${offset}, ${limit}`
 
     const query = `
       SELECT
@@ -83,8 +93,9 @@ const Unit = {
         LEFT JOIN ${locationTable} on location.locationID = unit.locationID
         LEFT JOIN ${ownerTable}  on owner.ownerID = location.ownerID
       ${whereClause}
-      ORDER BY COALESCE(unit.suiteNum, unit.streetNum); `;
-    return db.query(query, values);
+      ORDER BY COALESCE(unit.suiteNum, unit.streetNum)
+      ${limitClause}; `;
+    return db.query(query);
   }
 }
 
