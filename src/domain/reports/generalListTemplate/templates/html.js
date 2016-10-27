@@ -59,7 +59,23 @@ export const reportHeaderTemplate = `
   <div class="report-title">
     <h1>{{ reportTitle }}</h1>
     <h2>{{ reportFor }}</h2>
-  </div>`;
+  </div>
+  <div class="report-datetime">
+    <p>{{currentDate}}</p>
+    <p>{{currentTime}}</p>
+  </div>
+  {{#if basis}}
+  <div class="report-basis">
+    <strong>{{capitalize basis}} Basis</strong>
+  </div>
+  {{/if}}
+  {{#if dateRange}}
+  <div class="report-date-range">
+    <p>{{dateFormat dateRange.startDate 'MMM D, Y'}} to {{dateFormat dateRange.endDate 'MMM D, Y'}}</p>
+    {{#if dateRange.title}}<p>{{dateRange.title}}</p>{{/if}}
+  </div>
+  {{/if}}
+  `;
 
 export const reportFooterTemplate = '';
 

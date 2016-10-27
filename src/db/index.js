@@ -8,7 +8,7 @@ let prefix = null;
 
 export function init(config, options) {
   if (initialized && !options.force) return pool;
-
+  
   prefix = config.dbPrefix;
   pool =    mysql.createPool(config.db);
   initialized = true;
@@ -54,7 +54,7 @@ export function query(sql, values, options) {
       return resolve(rows);
     }
 
-    
+
     if (options.transaction) {
       options.transaction.query(sql, values, callback);
     } else {
