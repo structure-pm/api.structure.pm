@@ -17,11 +17,45 @@ const Unit = {
     where.active = (where.hasOwnProperty('active')) ? where.active : 1;
 
     // Construct the where clause
+    const yesNoFields = [
+      'priority', 'heat', 'gas', 'electricity', 'water', 'trash', 'disabledAccess',
+      'basement', 'deck', 'patio', 'fireplace', 'centralAir', 'petsAllowed', 'cableReady',
+      'cableIncluded', 'internetAccess', 'onSiteParking', 'streetParking', 'lawnCare',
+      'alarmSystem', 'laundry', 'laundryHookups', 'laundromat', 'garage', 'carport',
+      'furnished', 'pool', 'hotTub', 'tennisCourt', 'dishwasher', 'available'];
+    const countFields = ['beds','baths', 'rent', 'deposit'];
+
     const whereClauses = [];
     if (where.unitID) whereClauses.push(`unit.unitID=${db.escape(where.unitID)}`);
     if (where.locationID) whereClauses.push(`unit.locationID='${db.escape(where.locationID)}'`);
     if (where.ownerID) whereClauses.push(`location.ownerID='${db.escape(where.ownerID)}'`);
     if (where.zoneID) whereClauses.push(`location.zoneID=${db.escape(where.zoneID)}`);
+    yesNoFields.forEach(fld => {
+      if (where.hasOwnProperty(fld)) {
+        const q = (where[fld])
+          ? `unit.${fld}=1`
+          : `(unit.${fld}=0 OR unit.${fld} IS NULL)`
+        whereClauses.push(q);
+      }
+    });
+    countFields.forEach(fld => {
+      if (where.hasOwnProperty(fld)) {
+        let val = where[fld],
+            operator = '=';
+
+        if (val.indexOf('gt:') === 0) {
+          operator = '>';
+        } else if (val.indexOf('gte:') === 0) {
+          operator = '>=';
+        } else if (val.indexOf('lt:') === 0) {
+          operator = '<';
+        } else if (val.indexOf('lte:') === 0) {
+          operator = '<=';
+        }
+        if (operator !== '=') val = val.split(':')[1];
+        whereClauses.push(`unit.${fld}${operator}${val}`);
+      }
+    });
     if (!options.includeDNM) {
       whereClauses.push("location.shortHand NOT LIKE '%DNM%'");
     }
@@ -31,6 +65,7 @@ const Unit = {
 
     const whereClause = (whereClauses.length) ? 'WHERE ' + whereClauses.join(' AND ') : '';
     const limitClause = `LIMIT ${offset}, ${limit}`
+
 
     const query = `
       SELECT

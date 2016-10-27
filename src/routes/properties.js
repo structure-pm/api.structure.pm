@@ -10,5 +10,10 @@ export default function(config) {
   router.get('/units', properties.getUnit);
   router.get('/units/:unitID', properties.getUnit);
 
+  router.get('/test', function(req, res, next) {
+    console.log(req.query.q);
+    return res.json('ok')
+  })
+
   return router;
 }
