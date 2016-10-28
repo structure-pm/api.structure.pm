@@ -5,9 +5,19 @@ const gcfile = {};
 export default gcfile;
 
 gcfile.get = function(id) {
-  const selectQuery = `SELECT * FROM ${gcfileTable} where id = ? `;
-  db.query(selectQuery, [id])
-    .then(rows => (rows && rows.length) ? rows[0] : null);
+  return gcfile.find({id: id})
+    .then(files => (files && files.length) ? files[0] : null);
+}
+
+gcfile.find = function(where) {
+  const gcfileTable = `${db.getPrefix()}_log.google_cloud_objects`;
+  const whereClauses = [];
+  if (where.id) whereClauses.push('id=' + db.escape(where.id));
+  if (where.assetType) whereClauses.push(`assetType='${db.escape(where.assetType)}'`);
+  if (where.assetID) whereClauses.push(`assetID='${db.escape(where.assetID)}'`);
+  const whereClause = (whereClauses.length) ? "WHERE " + whereClauses.join(' AND ') : '';
+  const selectQuery = `SELECT * FROM ${gcfileTable} ${whereClause}`;
+  return db.query(selectQuery)
 }
 
 gcfile.create = function(options) {

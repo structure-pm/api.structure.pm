@@ -14,3 +14,22 @@ Assets.saveBufferToGFile = function(gfileData, buffer) {
     .then(publicUrl => gcloudFile.create({assetType, assetID, filename, mimeType}))
     .then(gfile => gcloudFile.save(gfile));
 }
+
+
+Assets.moveGFile = function(fileObjectId, gfileData) {
+  const {assetType, assetID, filename} = gfileData;
+  const newFilename = `${assetType}/${assetID}/${filename}`;
+  let filename;
+
+  return gcloudFile.get(fileObjectId)
+    .then(gfile => {
+      filename = `${gfile.assetType}/${gfile.assetID}/${gfile.filename}`;
+      gfile.assetType = assetType;
+      gfile.assetID = assetID;
+      gfile.filename = filename;
+      return gcloudFile.save(gfile);
+    })
+    .then(gfile => {
+      return gcloud.moveFile(filename, newFilename);
+    })
+}
