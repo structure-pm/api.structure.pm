@@ -19,7 +19,7 @@ function sortByArray(ary) {
 
 export default function groupSorter(sortBy) {
   if (!sortBy) {
-    return (a,b) => 1;
+    return (a,b) => 0;
   } else if (sortBy.toLowerCase() === 'asc') {
     return sortAscending;
   } else if (sortBy.toLowerCase() === 'desc') {
