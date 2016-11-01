@@ -10,11 +10,18 @@ describe('Vendor Repository', () => {
     db.init(config, {force: true});
   });
   after(done => {
-    db.end().then(() => done()).catch(done);
+    const vendorTable = db.getPrefix() + "_expenses.vendor";
+    db.query(`TRUNCATE TABLE ${vendorTable}`)
+      .then(() => db.end() )
+      .then(() => done())
+      .catch(done);
   });
 
-  it("fetches a vendor from the database", done => {
-    Vendors.findById(2)
+
+  it("creates a vendor", done => {
+    const vendorTable = db.getPrefix() + "_expenses.vendor";
+    db.query(`INSERT INTO ${vendorTable} (expenseID) values (1)`)
+      .then(res =>Vendors.findById(res.insertId) )
       .then(vendor => {
         expect(vendor).to.be.ok;
         done();

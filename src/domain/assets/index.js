@@ -6,30 +6,33 @@ import gcloudFile from './gcloudFile.repository';
 const Assets = {};
 export default Assets;
 
-Assets.saveBufferToGFile = function(gfileData, buffer) {
+Assets.saveBufferToGFile = function(gfileData, buffer, dbOptions) {
   const {assetType, assetID, filename, mimeType} = gfileData;
   const cloudFilename = `${assetType}/${assetID}/${filename}`;
 
   return gcloud.saveBufferToCloud(cloudFilename, mimeType, buffer)
     .then(publicUrl => gcloudFile.create({assetType, assetID, filename, mimeType}))
-    .then(gfile => gcloudFile.save(gfile));
+    .then(gfile => gcloudFile.save(gfile, dbOptions));
 }
 
 
-Assets.moveGFile = function(fileObjectId, gfileData) {
+Assets.moveGFile = function(fileObjectId, gfileData, dbOptions) {
   const {assetType, assetID, filename} = gfileData;
   const newFilename = `${assetType}/${assetID}/${filename}`;
-  let filename;
 
   return gcloudFile.get(fileObjectId)
     .then(gfile => {
-      filename = `${gfile.assetType}/${gfile.assetID}/${gfile.filename}`;
       gfile.assetType = assetType;
       gfile.assetID = assetID;
       gfile.filename = filename;
-      return gcloudFile.save(gfile);
+      return gcloudFile.save(gfile, dbOptions);
     })
     .then(gfile => {
-      return gcloud.moveFile(filename, newFilename);
+      const gFilename = `${gfile.assetType}/${gfile.assetID}/${gfile.filename}`;
+      return gcloud.moveFile(gFilename, newFilename);
     })
+}
+
+Assets.getGFilesForAsset = function(assetType, assetID, dbOptions) {
+  return gcloudFile.find({assetType, assetID}, dbOptions);
 }

@@ -25,10 +25,10 @@ const UnknownAccount = {
       .then(rows => (rows && rows.length) ? rows[0] : null);
   },
 
-  destroy(id) {
+  destroy(id, options) {
     const unknownAccountsTable = `${db.getPrefix()}_imports.imported_unknown_account`;
-    const query = ` DELETE FROM ${unknownAccountsTable} WHERE id = ? `;
-    return db.query(query, [id]);
+    const query = `UPDATE ${unknownAccountsTable} SET deleted=1 WHERE id=?`;
+    return db.query(query, [id], options);
   },
 
   findById(id, options) {
@@ -51,14 +51,16 @@ const UnknownAccount = {
     if (!where.hasOwnProperty('deleted')) {
       where.deleted = 0;
     }
+    if (where.hasOwnProperty('vendorID')) {
+      where['v.vendorID'] = where.vendorID;
+      delete where.vendorID;
+    }
     const whereClauses = Object.keys(where).map(key => `${key}=?`)
     const whereClause = (whereClauses.length) ? 'WHERE ' + whereClauses.join(' AND ') : '';
     const values = Object.keys(where).map(key => where[key]);
 
 
     const query = `
-      SELECT * FROM ${unknownAccountsTable} ${whereClause} `;
-    const queryWithVendor = `
       SELECT
         ua.*, v.expenseID, c.*,
         c.cname as vendorName
@@ -67,8 +69,7 @@ const UnknownAccount = {
         LEFT JOIN ${contactTable} c on c.contactID=v.contactID
       ${whereClause}`;
 
-    let queryToUse = (options.includeVendor) ? queryWithVendor : query;
-    return db.query(queryToUse,values, options)
+    return db.query(query,values, options)
       .map(this.rawAccountToObject);
   },
 

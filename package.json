@@ -29,7 +29,8 @@
     "eslint-plugin-jsx-a11y": "^2.0.1",
     "eslint-plugin-react": "^6.0.0",
     "istanbul": "^1.0.0-alpha.2",
-    "mocha": "^2.4.5"
+    "mocha": "^2.4.5",
+    "proxyquire": "^1.7.10"
   },
   "author": "",
   "license": "ISC",

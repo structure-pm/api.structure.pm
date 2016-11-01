@@ -1,8 +1,8 @@
 import {expect} from 'chai';
 import Moment from 'moment';
-import {monthsBetween} from '../../src/domain/reports/dataServices/profitLoss';
+import {monthsBetween} from '../../src/domain/reports/dataServices/dateUtils';
 
-describe("dateUtils", () => {
+describe("Report | dateUtils", () => {
   describe("monthsBetween()", () => {
     it("gets months from JS Dates", () => {
       const startDate = Moment().startOf('year').toDate();
