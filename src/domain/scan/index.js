@@ -42,10 +42,9 @@ Scan.importScannedBill = function(scanData) {
 
 Scan.createBillFromScan = function(scan, asset, options={}) {
   return Promise.try(() => {
-    console.log("MOMENT THIS", scan.DueDate);
     let billData = {
       createDate: new Date(),
-      dueDate: Moment(scan.DueDate).toDate(),
+      dueDate: Moment(scan.DueDate, ["MM-DD-YYYY", "YYYY-MM-DD"]).toDate(),
       vendorID: asset.vendorID,
       expenseID: asset.expenseID,
       amount: scan.CurrentAmount,
@@ -132,7 +131,6 @@ export function clearUnknownAccount(unknown, asset, dbOptions) {
     ])
     .spread((bill, files) => {
       returnBill = bill;
-      console.log("NEED TO MOVE FILES", files);
       const assetID = bill.entryID;
       return Promise.map(files, file => {
         const filename = file.filename;
