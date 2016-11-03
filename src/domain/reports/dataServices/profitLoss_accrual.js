@@ -37,7 +37,7 @@ export function partitionBy(options, queryTypeSelector) {
       prefix: 'el',
       sumColumn: 'payment',
       defaultColSQL: data => `SUM(${data.prefix}.${data.sumColumn}) as ${data.field}`,
-      timeColSQL: data => `SUM(CASE WHEN ${data.prefix}.dateStamp BETWEEN '${data.start}' AND '${data.end}' THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`,
+      timeColSQL: data => `SUM(CASE WHEN COALESCE(inv.dueDate, inv.invDate, el.dateStamp) BETWEEN '${data.start}' AND '${data.end}' THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`,
       locColSQL: data => `SUM(CASE WHEN ${data.locSelector} THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`
     },
     accruedRent: {
