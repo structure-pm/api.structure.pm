@@ -1,4 +1,5 @@
-import _ from 'lodash';
+import _omit from 'lodash/omit';
+import _pick from 'lodash/pick';
 import createOwnerRepository from '../../domain/assets/owner.repository';
 import createLocationRepository from '../../domain/assets/location.repository';
 import createUnitRepository from '../../domain/assets/unit.repository';
@@ -7,7 +8,7 @@ export function getOwners(req, res, next) {
   const Owners = createOwnerRepository();
   const searchFields = ['ownerID', 'managedBy', 'managerID', 'nickname', 'lName', 'fName', 'active'];
 
-  let where = _.pick(req.query, searchFields);
+  let where = _pick(req.query, searchFields);
 
   // `managerID` is a convenience field
   if (where.hasOwnProperty('managerID')) {
@@ -30,10 +31,10 @@ export function getLocation(req, res, next) {
   const locationSearchFields = ['locationID', 'shortHand', 'ownerID', 'zoneID', 'active'];
   const ownerSearchFields = ['managedBy', 'managerID'];
 
-  let locationWhere = _.pick(req.query, locationSearchFields);
+  let locationWhere = _pick(req.query, locationSearchFields);
   locationWhere = prefixObject('location', locationWhere);
 
-  let ownerWhere = _.pick(req.query, ownerSearchFields);
+  let ownerWhere = _pick(req.query, ownerSearchFields);
   // `managerID` is a convenience field
   if (ownerWhere.hasOwnProperty('managerID')) {
     ownerWhere['managedBy'] = ownerWhere.managerID;
@@ -55,32 +56,18 @@ export function getLocation(req, res, next) {
 
 export function getUnit(req, res, next) {
   const Units = createUnitRepository();
-  const unitSearchFields = ['unitID', 'locationID', 'available', 'active'];
-  const locationSearchFields = ['ownerID'];
-  const ownerSearchFields = ['managerID', 'managedBy'];
 
-  let unitWhere = _.pick(req.query, unitSearchFields);
-  unitWhere = prefixObject('unit', unitWhere);
-
-  let locationWhere = _.pick(req.query, locationSearchFields);
-  locationWhere = prefixObject('location', locationWhere);
-
-  let ownerWhere = _.pick(req.query, ownerSearchFields);
-  // `managerID` is a convenience field
-  if (ownerWhere.hasOwnProperty('managerID')) {
-    ownerWhere['managedBy'] = ownerWhere.managerID;
-    delete ownerWhere.managerID;
+  const options = {
+    limit: req.query.limit || 50,
+    offset: req.query.offset || 0,
+    fields: req.query.fields
   }
-  ownerWhere = prefixObject('owner', ownerWhere);
 
-  let where = Object.assign({}, unitWhere, locationWhere, ownerWhere);
+  const where = _omit(req.query, ['limit', 'offset', 'fields']);
+  where.unitID = req.params.unitID || where.unitID;
 
-  // Unless specified, default to active owners only
-  if (!where.hasOwnProperty('unit.active')) where['unit.active'] = 1;
-  Units.find(where)
-    .then(units => {
-      res.json(units);
-    })
+  Units.find(where, options)
+    .then(units => res.json(units) )
     .catch(next);
 }
 

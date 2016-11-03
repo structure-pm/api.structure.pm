@@ -132,7 +132,7 @@ export default function pl(options) {
       SELECT
         exp.type as accountName,
         CASE
-          WHEN exp.type REGEXP 'capital|mortgage' AND not exp.type REGEXP 'mortgage interest'
+          WHEN exp.type REGEXP 'capital|mortgage|Fixed Asset' AND not exp.type REGEXP 'mortgage interest'
           THEN 'Capital Income/Expense'
           ELSE 'Operating Income/Expense'
           END as accountOperating,
@@ -172,7 +172,7 @@ export default function pl(options) {
         (${expenseQuery})
       ) as entries
       ORDER BY
-        accountType, accountGroup, accountCode`;
+        accountCode`;
 
       return db.query(fullQuery)
         .then(data => ({

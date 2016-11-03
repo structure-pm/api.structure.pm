@@ -1,6 +1,19 @@
+import Moment from 'moment';
 
 export default function registerHelpers(handlebars) {
 
+  handlebars.registerHelper('currentDate', function() {
+    return Moment().format("MMMM Do YYYY");
+  })
+
+  handlebars.registerHelper('currentTime', function() {
+    return Moment().format("h:mm:ss a");
+  });
+
+  handlebars.registerHelper('dateFormat', function(date, fmt) {
+    return Moment(date).format(fmt);
+  })
+  
   handlebars.registerHelper('toMoney', function(num) {
       if (typeof num !== "number") return num
       var neg = false,

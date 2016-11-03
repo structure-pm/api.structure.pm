@@ -1,4 +1,5 @@
 .report-wrapper {
+  position: relative;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   background-color: #fff;
   padding: 10px;
@@ -13,12 +14,35 @@
   }
 
   header.report-header {
+    position: relative;
     border-bottom: 2px solid #000;
     margin-bottom: 10px;
 
     .report-title {
       text-align:center
     }
+
+    .report-datetime {
+      position: absolute;
+      top:0;
+      p {margin: 0}
+    }
+
+    .report-basis {
+      position:absolute;
+      bottom: 0;
+      margin-bottom: 12px;
+    }
+
+    .report-date-range {
+      position: absolute;
+      top: 0;
+      right: 0;
+      text-align: right;
+      p {margin: 0}
+    }
+
+
   }
 
 

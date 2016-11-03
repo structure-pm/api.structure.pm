@@ -106,3 +106,7 @@ export function getPrefix() {
   if (!initialized) throw new Error("DB Connection must be initialized before use.");
   return prefix;
 }
+
+export function escape(val) {
+  return mysql.escape(val);
+}
