@@ -20,6 +20,7 @@ export function partitionForAccruedRentBy(options, prefix) {
 
 
 export function partitionBy(options, queryTypeSelector) {
+  const dbPrefix = db.getPrefix();
   const {partition} = options;
   const columnSQL = [];
   const partitions = [];
@@ -30,32 +31,34 @@ export function partitionBy(options, queryTypeSelector) {
       sumColumn: 'amount',
       defaultColSQL: data => `SUM(${data.prefix}.${data.sumColumn}) as ${data.field}`,
       timeColSQL: data => `SUM(CASE WHEN ${data.prefix}.dateStamp BETWEEN '${data.start}' AND '${data.end}' THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`,
-      locColSQL: data => `SUM(CASE WHEN ${locSelector} THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`
+      locColSQL: data => `SUM(CASE WHEN ${data.locSelector} THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`
     },
     expense: {
       prefix: 'el',
       sumColumn: 'payment',
       defaultColSQL: data => `SUM(${data.prefix}.${data.sumColumn}) as ${data.field}`,
       timeColSQL: data => `SUM(CASE WHEN ${data.prefix}.dateStamp BETWEEN '${data.start}' AND '${data.end}' THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`,
-      locColSQL: data => `SUM(CASE WHEN ${locSelector} THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`
+      locColSQL: data => `SUM(CASE WHEN ${data.locSelector} THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`
     },
     accruedRent: {
       prefix: 'lse',
       defaultColSQL: data => `SUM(
-        month_diff(
-          GREATEST(${data.prefix}.startDate, ${data.start}),
-          LAST_DAY(LEAST(${data.prefix}.endDate, ${data.end})) )
+        ${dbPrefix}_assets.month_diff(
+          GREATEST(${data.prefix}.startDate, '${data.start}'),
+          LAST_DAY(LEAST(${data.prefix}.endDate, '${data.end}')) )
         ) * ${data.prefix}.rent AS ${data.field}`,
-      timeColSQL: data => `SUM(
-        month_diff(
-          GREATEST(${data.prefix}.startDate, ${data.start}),
-          LAST_DAY(LEAST(${data.prefix}.endDate, ${data.end})) )
-        ) * ${data.prefix}.rent AS ${data.field}`,
+      timeColSQL: data => `SUM(CASE
+        WHEN ${data.prefix}.startDate < '${data.end}' AND ${data.prefix}.endDate > '${data.start}'
+        THEN ${dbPrefix}_assets.month_diff(
+          GREATEST(${data.prefix}.startDate, '${data.start}'),
+          LAST_DAY(LEAST(${data.prefix}.endDate, '${data.end}')) ) * ${data.prefix}.rent
+        ELSE 0
+        END) ${data.field}`,
       locColSQL: data => `SUM(CASE
-        WHEN ${locSelector}
-        THEN month_diff(
-          GREATEST(${data.prefix}.startDate, ${data.start}),
-          LAST_DAY(LEAST(${data.prefix}.endDate, ${data.end})) ) * ${data.prefix}.rent
+        WHEN ${data.locSelector}
+        THEN ${dbPrefix}_assets.month_diff(
+          GREATEST(${data.prefix}.startDate, '${data.start}'),
+          LAST_DAY(LEAST(${data.prefix}.endDate, '${data.end}')) ) * ${data.prefix}.rent
         ELSE 0
         END)  AS ${data.field}`
     }
@@ -96,7 +99,7 @@ export function partitionBy(options, queryTypeSelector) {
     .spread((partitions, columnSQL) => {
       if (partition === 'location') {
         const dbPrefix = db.getPrefix();
-        const {ownerID} = options.filter;
+        const {ownerID, startDate, endDate} = options.filter;
         const locationQuery = `SELECT
             locationID,
             COALESCE(shortHand, CONCAT_WS(' ', streetNum, street), locationID) as name
@@ -107,9 +110,11 @@ export function partitionBy(options, queryTypeSelector) {
           // Entries not associated with a specific location
           const name = "General",
                 field = "partition_location_general",
+                start = startDate,
+                end = endDate,
                 locSelector = 'loc.locationID IS NULL'
 
-          const partitionOptions = Object.assign({field, name, locSelector}, queryType);
+          const partitionOptions = Object.assign({field, name, locSelector, start, end}, queryType);
           const col = queryType.locColSQL(partitionOptions);
 
           columnSQL.push(col)
@@ -119,9 +124,11 @@ export function partitionBy(options, queryTypeSelector) {
           locations.forEach((loc, idx) => {
             const field = `partition_location_${idx}`,
                   name = loc.name,
+                  start = startDate,
+                  end = endDate,
                   locSelector = `loc.locationID = '${loc.locationID}'`;
 
-            const partitionOptions = Object.assign({field, name, locSelector}, queryType);
+            const partitionOptions = Object.assign({field, name, locSelector, start, end}, queryType);
             const col = queryType.locColSQL(partitionOptions);
 
             columnSQL.push(col);
@@ -137,9 +144,11 @@ export function partitionBy(options, queryTypeSelector) {
     .spread((partitions, columnSQL) => {
       // Default partition is the account balance
       const name = (partitions.length) ? 'Total' : 'Balance',
-            field = 'accountBalance';
+            field = 'accountBalance',
+            start = options.filter.startDate,
+            end = options.filter.endDate;
 
-      const partitionOptions = Object.assign({field, name}, queryType);
+      const partitionOptions = Object.assign({field, name, start, end}, queryType);
       const col = queryType.defaultColSQL(partitionOptions);
 
       columnSQL.push(col);
@@ -169,28 +178,27 @@ export default function pl(options) {
   ])
     .spread((incomePartition, expensePartition, accruedRentPartition) => {
       const accruedRentQuery =  `SELECT
-        (SELECT inc.type FROM ${dbPrefix}_income.income where incomeID=1) as accountName,
+        (SELECT type FROM ${dbPrefix}_income.income where incomeID=1) as accountName,
         'Operating Income/Expense' as accountOperating,
         (SELECT mgl.acctGL
-          FROM ${dbPrefix}_log.mapGL
+          FROM ${dbPrefix}_log.mapGL mgl
           JOIN ${dbPrefix}_income.income inc on mgl.mapID = inc.mapID
           WHERE inc.incomeID = 1) as accountCode,
         'income' as accountType,
         (SELECT mgl.type
-          FROM ${dbPrefix}_log.mapGL
+          FROM ${dbPrefix}_log.mapGL mgl
           JOIN ${dbPrefix}_income.income inc on mgl.mapID = inc.mapID
           WHERE inc.incomeID = 1) as accountGroup,
         'credit' as normalBalance,
-        ${accuredRentParition}
+        ${accruedRentPartition.columnSQL}
       FROM
         ${dbPrefix}_assets.lease lse
         JOIN ${dbPrefix}_assets.unit u on u.unitID = lse.unitID
         JOIN ${dbPrefix}_assets.location loc on loc.locationID = u.locationID
       WHERE
         loc.ownerID = '${ownerID}'
-        AND (lse.endDate > ${startDate} OR lse.endDate IS NULL)
-        AND lse.startDate < ${endDate}`;
-
+        AND (lse.endDate > '${startDate}' OR lse.endDate IS NULL)
+        AND lse.startDate < '${endDate}'`;
 
       const incomeQuery = `
       SELECT
