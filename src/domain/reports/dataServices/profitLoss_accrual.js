@@ -30,14 +30,14 @@ export function partitionBy(options, queryTypeSelector) {
       prefix: 'il',
       sumColumn: 'amount',
       defaultColSQL: data => `SUM(${data.prefix}.${data.sumColumn}) as ${data.field}`,
-      timeColSQL: data => `SUM(CASE WHEN ${data.prefix}.dateStamp BETWEEN '${data.start}' AND '${data.end}' THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`,
+      timeColSQL: data => `SUM(CASE WHEN ${data.prefix}.dateStamp >= '${data.start}' AND ${data.prefix}.dateStamp <= '${data.end}' THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`,
       locColSQL: data => `SUM(CASE WHEN ${data.locSelector} THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`
     },
     expense: {
       prefix: 'el',
       sumColumn: 'amount',
       defaultColSQL: data => `SUM(${data.prefix}.${data.sumColumn}) as ${data.field}`,
-      timeColSQL: data => `SUM(CASE WHEN el.dueDate BETWEEN '${data.start}' AND '${data.end}' THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`,
+      timeColSQL: data => `SUM(CASE WHEN el.dueDate >= '${data.start}' AND el.dueDate <= '${data.end}' THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`,
       locColSQL: data => `SUM(CASE WHEN ${data.locSelector} THEN ${data.prefix}.${data.sumColumn} ELSE 0 END) AS ${data.field}`
     },
     accruedRent: {
