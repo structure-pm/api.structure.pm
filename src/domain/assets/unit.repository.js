@@ -28,8 +28,8 @@ Unit.find = function(where={}, options={}) {
 
   const whereClauses = [];
   if (where.unitID) whereClauses.push(`unit.unitID=${db.escape(where.unitID)}`);
-  if (where.locationID) whereClauses.push(`unit.locationID='${db.escape(where.locationID)}'`);
-  if (where.ownerID) whereClauses.push(`location.ownerID='${db.escape(where.ownerID)}'`);
+  if (where.locationID) whereClauses.push(`unit.locationID=${db.escape(where.locationID)}`);
+  if (where.ownerID) whereClauses.push(`location.ownerID=${db.escape(where.ownerID)}`);
   if (where.zoneID) whereClauses.push(`location.zoneID=${db.escape(where.zoneID)}`);
   yesNoFields.forEach(fld => {
     if (where.hasOwnProperty(fld)) {
