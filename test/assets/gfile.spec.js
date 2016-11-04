@@ -18,10 +18,15 @@ const mockGCloud = {
     return Promise.resolve(cloudFilename);
   }
 }
+const failingMockGCloud = {
+  moveFile: ( filename, newFilename ) => {
+    return Promise.reject('sukka');
+  },
+}
 Assets.__Rewire__('gcloud', mockGCloud);
 
 
-describe.only("Assets | GFile functions", () => {
+describe("Assets | GFile functions", () => {
   before(() => {
     db.init(config, {force: true});
   });
@@ -81,12 +86,38 @@ describe.only("Assets | GFile functions", () => {
     });
 
     it("makes an api call to gcloud", done => {
-      done();
-
+      let currentFilename;
+      GCloudFile.get(gFileID)
+        .tap(gFile => currentFilename = `${gFile.assetType}/${gFile.assetID}/${gFile.filename}` )
+        .then(() => Assets.moveGFile(gFileID, { assetType: 'move3', assetID: '3', filename: 'test3.txt' }) )
+        .then(gFile => {
+          const log = moveFileLog.pop();
+          const newFilename = `${gFile.assetType}/${gFile.assetID}/${gFile.filename}`;
+          expect(currentFilename).to.not.equal(newFilename);
+          expect(log.filename).to.equal(currentFilename);
+          expect(log.newFilename).to.equal(newFilename);
+          expect(log.filename).to.not.equal(log.newFilename);
+          done();
+        })
+        .catch(done);
     });
 
     it("rolls back the db updates if gcloud fails", done => {
-      done();
+      Assets.__Rewire__('gcloud', failingMockGCloud);
+      let currentFile;
+      GCloudFile.get(gFileID)
+        .tap(gFile => currentFile = Object.assign({}, gFile) )
+        .then(() => Assets.moveGFile(gFileID, { assetType: 'move4', assetID: '4', filename: 'test4.txt' }) )
+        .then(gFile => {
+          Assets.__Rewire__('gcloud', mockGCloud);
+          throw new Error("Should have been a rejection");
+        })
+        .catch(err => GCloudFile.get(gFileID))
+        .then(gFile => {
+          expect(gFile).to.deep.equal(currentFile);
+          done();
+        })
+        .catch(done);
 
     });
 
