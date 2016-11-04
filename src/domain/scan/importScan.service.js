@@ -3,8 +3,8 @@ import Promise from 'bluebird';
 import createAccountAssetRepository from './accountAsset.repository';
 import createUnknownAccountsRepository from './unknownAccounts.repository';
 import createBillRepository from '../expenses/bill.repository';
-import createLocationRepository from '../assets/location.repository';
-import createUnitRepository from '../assets/unit.repository';
+
+import Expenses from '../expenses';
 
 import config from '../../config'
 
@@ -102,7 +102,6 @@ const ImportScanService = {
   createBillFromScan(scanData, assetData, options) {
 
     return Promise.try(() => {
-      let Bills = this.repositories.Bills;
       let billData = {
         createDate: new Date(),
         dueDate: moment(scanData.DueDate).toDate(),
@@ -114,11 +113,11 @@ const ImportScanService = {
 
       switch (assetData.assetType) {
         case 'owner':
-          return Bills.createBillForOwner(assetData.assetID, billData, options);
+          return Expenses.createBillForOwner(assetData.assetID, billData, options);
         case 'location':
-          return Bills.createBillForLocation(assetData.assetID, billData, options);
+          return Expenses.createBillForLocation(assetData.assetID, billData, options);
         case 'unit':
-          return Bills.createBillForUnit(assetData.assetID, billData, options);
+          return Expenses.createBillForUnit(assetData.assetID, billData, options);
         default:
           return Promise.reject(new Error(`Unrecognized assetType '${assetData.assetType}'`));
       }
@@ -155,7 +154,6 @@ function uploadUrl(assetType, assetID, dueDate) {
 export default function createImportScanService() {
   let repo = Object.create(ImportScanService);
   repo.repositories = {
-    Bills: createBillRepository(),
     AccountAssets: createAccountAssetRepository(),
     UnknownAccounts: createUnknownAccountsRepository(),
   }

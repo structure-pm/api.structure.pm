@@ -18,18 +18,3 @@ export default function(config) {
 
   return router;
 }
-
-
-function gfilename(req, res, next) {
-  const assetType = req.query.assetType,
-        assetID = req.query.assetID,
-        filename = req.query.filename;
-
-  if (!assetType) return next(new Error('Missing `assetType` from request'));
-  if (!assetID) return next(new Error('Missing `assetID` from request'));
-  if (!filename) return next(new Error('Missing `filename` from request'));
-  if (!req.file) return next(new Error('No file present'));
-
-  req.file.gcloudFilename = `${assetType}/${assetID}/${filename}`;
-  next();
-}

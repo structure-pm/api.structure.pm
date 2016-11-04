@@ -51,6 +51,16 @@ gcloud.saveBufferToCloud = function(gcsname, mimeType, buffer) {
   })
 }
 
+gcloud.moveFile = function(filename, newFilename) {
+  return new Promise((resolve, reject) => {
+    var file = gcs.bucket(GOOGLE_DEFAULT_BUCKET).file(filename);
+    file.move(newFilename, (err, destinationFile, apiResponse) => {
+      if (err) return reject(err);
+      return resolve(newFilename);
+    });
+  });
+}
+
 function getPublicUrl(filename) {
   return `https://storage.googleapis.com/${GOOGLE_DEFAULT_BUCKET}/${filename}`;
 }
