@@ -1,5 +1,5 @@
 import * as db from '../../db';
-
+import Promise from 'bluebird';
 
 const gcfile = {};
 export default gcfile;
@@ -55,9 +55,9 @@ function updateFile(file, options) {
 
   const id = file.id;
   const fields = ['title', 'filename', 'description', 'mimeType', 'assetType', 'assetID', 'finalized', 'userID', 'createdAt'];
-  const gcfileTable = `${db.getPrefix()}_log.google_cloud_objects`;
   const updateFields = fields.map(fld => `${fld}=?`);
-  const updateValues = fields.map(fld => (fld === 'finalized' || fld === 'userID') ? file[fld] : `'${file[fld]}'`);
+  const updateValues = fields.map(fld => file[fld]);
+  const gcfileTable = `${db.getPrefix()}_log.google_cloud_objects`;
 
   const updateSQL = `UPDATE ${gcfileTable} SET ${updateFields.join(',')} WHERE id=${id}`;
   return db.query(updateSQL, updateValues, options)

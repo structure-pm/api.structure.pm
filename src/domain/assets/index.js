@@ -29,7 +29,7 @@ Assets.moveGFile = function(fileObjectId, gfileData, dbOptions) {
     })
     .then(gfile => {
       const gFilename = `${gfile.assetType}/${gfile.assetID}/${gfile.filename}`;
-      return gcloud.moveFile(gFilename, newFilename);
+      return gcloud.moveFile(gFilename, newFilename).return(gfile);
     })
 }
 
