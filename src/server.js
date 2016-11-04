@@ -52,11 +52,15 @@ app.use(function(err, req, res, next) {
 
   let retErr = { message: err.message, ErrorCode: err.ErrorCode };
 
-  if (process.env.NODE_ENV !== 'production')
-  retErr.stack = err.stack;
 
   if (process.env.NODE_ENV !== 'production') {
+    retErr.stack = err.stack;
     console.log(err.stack);
+
+    if (err.sql) {
+      console.log('------------- SQL\n', err.sql, '\n------------- SQL');
+    }
+
   }
 
   res.status(status).json(retErr)

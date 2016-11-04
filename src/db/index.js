@@ -50,7 +50,11 @@ export function query(sql, values, options) {
 
   return new Promise((resolve, reject) => {
     function callback(err, rows, fields) {
-      if (err) return reject(err);
+      if (err) {
+        err.sql = mysql.format(sql, values);
+        return reject(err);
+      }
+      
       return resolve(rows);
     }
 
