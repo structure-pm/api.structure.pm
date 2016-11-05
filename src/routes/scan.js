@@ -1,7 +1,6 @@
 import multer from 'multer';
 import {Router} from 'express';
 import * as scan from './controllers/scan.controller';
-import gcloud from '../domain/gcloud'
 
 const storage = multer.memoryStorage();
 const upload = multer({storage});

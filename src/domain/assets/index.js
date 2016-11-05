@@ -1,6 +1,6 @@
 import request from 'request-promise';
 import * as db from '../../db';
-import gcloud from '../gcloud'
+import gcloud from '../../services/gcloud'
 import gcloudFile from './gcloudFile.repository';
 
 
@@ -8,6 +8,7 @@ const Assets = {};
 export default Assets;
 
 Assets.saveBufferToGFile = function(gfileData, buffer, dbOptions) {
+
   const {assetType, assetID, filename, mimeType} = gfileData;
   const cloudFilename = `${assetType}/${assetID}/${filename}`;
 
@@ -40,13 +41,10 @@ Assets.moveGFile = function(fileObjectId, gfileData, dbOptions) {
       .then(gfile => {
         return gcloud.moveFile(currentFilename, newFilename).return(gfile);
       })
-      .tap(gfile => {
-        if (!returnTransaction) t.commit();
-        return gfile;
-      })
+      .tap(gfile => { if (!returnTransaction) db.commit(t); } )
       .catch(err => {
-        if (!returnTransaction) t.rollback();
-        throw(err);
+        if (!returnTransaction) return db.rollback(t).throw(err)
+        throw err;
       })
 
   })

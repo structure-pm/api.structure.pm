@@ -20,17 +20,18 @@ const mockGCloud = {
 }
 const failingMockGCloud = {
   moveFile: ( filename, newFilename ) => {
-    return Promise.reject('sukka');
+    return Promise.reject('sucka');
   },
 }
-Assets.__Rewire__('gcloud', mockGCloud);
 
 
 describe("Assets | GFile functions", () => {
   before(() => {
     db.init(config, {force: true});
+    Assets.__Rewire__('gcloud', mockGCloud);
   });
   after(done => {
+    Assets.__ResetDependency__('gcloud');
     Promise.all([
       db.query(`TRUNCATE TABLE structutest_log.google_cloud_objects`),
     ])
