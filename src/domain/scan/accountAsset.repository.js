@@ -32,7 +32,7 @@ const AccountAssetRepository = {
     const selectQuery = `SELECT * FROM ${accountAssetTable} where id = ? `;
 
     return db.query(insertQuery, values, options)
-      .then(res => db.query(selectQuery, [res.insertId]))
+      .then(res => db.query(selectQuery, [res.insertId], options))
       .then(rows => (rows && rows.length) ? rows[0] : null);
   }
 }

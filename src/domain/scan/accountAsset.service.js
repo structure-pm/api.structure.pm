@@ -20,6 +20,7 @@ const AccountAssetService = {
       expenseID: vendor.expenseID,
     };
 
+
     return db.beginTransaction().then(t => {
       return Promise.try(() => {
           return this.repositories.AccountAssets.create({
@@ -30,7 +31,8 @@ const AccountAssetService = {
             assetID: assetID
           }, {transaction: t});
         })
-        .then(accountAsset => this.clearUnknownAccounts(accountData, {transaction: t}) )
+        .then(accountAsset => this.getUnknownAccounts(accountData.accountNumber, accountData.vendorID) )
+        .map(unknownAccount => this.clearUnknownAccount(unknownAccount, accountData, {transaction: t}) )
         .tap(bills => db.commit(t).return(bills))
         .then(bills => {
           return {
@@ -45,16 +47,40 @@ const AccountAssetService = {
 
   },
 
-  clearUnknownAccounts(accountData, options) {
-    let unknownAccountIDs = [];
-    return this.repositories.UnknownAccounts.find({
-        accountNumber: accountData.accountNumber,
-        vendorID: accountData.vendorID,
-      })
-      .tap(unknownAccounts => unknownAccountIDs = unknownAccounts.map(ua => ua.id))
-      .map(unknownAccount => this.services.importScan.createBillFromScan(unknownAccount.scanData, accountData, options) )
-      .tap(bills => this.repositories.UnknownAccounts.deleteMultiple(unknownAccountIDs,options))
+  getUnknownAccounts(accountNumber, vendorID) {
+    return this.repositories.UnknownAccounts.find({ accountNumber, vendorID });
   },
+
+  clearUnknownAccount(unknownAccount, accountData, dbOptions) {
+    const assetType = 'eLedger';
+    let returnBill;
+
+    return Promise
+      .all([
+        this.services.importScan.createBillFromScan(unknownAccount.scanData, accountData, dbOptions),
+        Assets.getGFilesForAsset('unknownAccount', unknownAccount.id, dbOptions)
+      ])
+      .spread((bill, files) => {
+        returnBill = bill;
+        return Promise.map(files, file => {
+          const assetID = bill.entryID, filename = file.filename;
+          return Assets.moveGFile(file.id, {assetType, assetID, filename}, dbOptions);
+        })
+      })
+      .then(() => this.repositories.UnknownAccounts.destroy(unknownAccount.id))
+      .then(() => returnBill);
+  },
+
+  // clearUnknownAccounts(accountData, options) {
+  //   let unknownAccountIDs = [];
+  //   return this.repositories.UnknownAccounts.find({
+  //       accountNumber: accountData.accountNumber,
+  //       vendorID: accountData.vendorID,
+  //     })
+  //     .tap(unknownAccounts => unknownAccountIDs = unknownAccounts.map(ua => ua.id))
+  //     .map(unknownAccount => this.services.importScan.createBillFromScan(unknownAccount.scanData, accountData, options) )
+  //     .tap(bills => this.repositories.UnknownAccounts.deleteMultiple(unknownAccountIDs,options))
+  // },
 
   repositories: {},
   services: {},

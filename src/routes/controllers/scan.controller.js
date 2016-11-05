@@ -1,17 +1,12 @@
 import Promise from 'bluebird';
-import createUnknownAccounts from '../../domain/scan/unknownAccounts.repository';
-import createAccountAssetService from '../../domain/scan/accountAsset.service';
-import createImportScanService from '../../domain/scan/importScan.service';
-import createVendorRepository from '../../domain/expenses/vendor.repository';
-
+import Scan from '../../domain/scan';
 import spmAssets from '../../domain/assets';
 
+
+
 export function importScan(req, res, next) {
-  let importScan = createImportScanService();
-  importScan.importScan(req.body)
-    .then(results => {
-      return res.json(results);
-    })
+  Scan.importScannedBill(req.body)
+    .then(results => res.json(results) )
     .catch(next);
 }
 
@@ -42,58 +37,47 @@ export function handleScanUpload(req, res, next) {
 
 
 export function getUnknownAccounts(req,res,next) {
-  const UnknownAccounts = createUnknownAccounts();
   const includeVendor = req.query.includeVendor;
 
-  UnknownAccounts.find({}, {includeVendor})
-    .then(accounts => {
-      return res.json(accounts);
-    })
+  Scan.getAllUnknownAccounts({includeVendor})
+    .then(accounts => res.json(accounts) )
     .catch(next)
 }
 
 export function associateUnknownAccount(req, res, next) {
-  let UnknownAccounts = createUnknownAccounts();
-  let Vendors = createVendorRepository();
-  let AccountAsset = createAccountAssetService();
+  const {unknownAccountID} = req.params;
+  const {assetType, assetID} = req.body;
 
+  if (!assetType) {
+    let err = new Error("missing assetType");
+    err.status = 400;
+    return next(err);
+  }
+  if (!assetID) {
+    let err = new Error("missing assetID");
+    err.status = 400;
+    return next(err);
+  }
 
-  let unknownAccount = UnknownAccounts.findById(req.params.unknownAccountID);
-  let vendor = unknownAccount.then(ua => {
-    console.log("SEEKING VENDOR", ua.vendorID)
-    return Vendors.findById(ua.vendorID)
-  });
+  Scan.getUnknownAccount(unknownAccountID)
+    .then(unknownAccount => {
+      if (!unknownAccount) {
+        let err = new Error("Not Found");
+        err.status = 404;
+        return next(err);
+      }
 
+      return Scan.matchUnknownAccountToAsset(unknownAccount, assetType, assetID)
+    })
+    .then(result => res.json(result))
+    .catch(next);
 
-
-  Promise.all([unknownAccount, vendor]).spread((unknownAccount, vendor) => {
-    if (!unknownAccount) {
-      let err = new Error("Not Found");
-      err.status = 404;
-      return next(err);
-    }
-
-    if (!vendor) {
-      let err = new Error(`VendorID ${unknownAccount.vendorID} was not found`);
-      err.status = 400;
-      return next(err);
-    }
-
-    return AccountAsset.associateAccount(unknownAccount, vendor, req.body.assetType, req.body.assetID)
-      .then(result => {
-        res.json(result);
-      })
-  })
-  .catch(next);
 }
 
 export function deleteUnknownAccount(req, res, next) {
   let id = req.params.unknownAccountID;
-  let UnknownAccounts = createUnknownAccounts();
 
-  UnknownAccounts.destroy(id)
-    .then(() => {
-      res.json('ok');
-    })
+  Scan.deleteUnknownAccount(id)
+    .then(() => res.json('ok'))
     .catch(next);
 }

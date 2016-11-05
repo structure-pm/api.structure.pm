@@ -1,103 +1,46 @@
+import _isNil from 'lodash/isNil';
 import * as db from '../../db';
+import Bill from './bill';
+
 import createLocationRepository from '../assets/location.repository';
 import createUnitRepository from '../assets/unit.repository';
 
 
-const Bill = {
+const Repo = {};
+export default Repo;
+
+Repo.save = function(bill, options) {
+  return (bill.id) ? updateBill(bill, option) : insertBill(bill,options);
+}
+
+Repo.getById = function(id, options) {
+  const eLedgerTable = `${db.getPrefix()}_expenses.eLedger`;
+  const selectQuery = `SELECT * FROM ${eLedgerTable} WHERE entryID=?`;
+  return db.query(selectQuery, [id], options)
+    .then(rows => (rows.length) ? new Bill(rows[0]) : null);
+}
+
+Repo.create = function(billData) {
+  return new Bill(billData);
+}
 
 
-  findById(entryID) {
-    const eLedgerTable = `${db.getPrefix()}_expenses.eLedger`;
-    const query = `
-      SELECT *
-      FROM ${eLedgerTable}
-      WHERE entryID=?`;
-    return db.query(query, [entryID])
-      .spread((rows, meta) => (rows.length) ? rows[0] : null )
-  },
-
-
-  createBillForUnit(unitID, billData, options) {
-    let Units = createUnitRepository();
-    return Units.findById(unitID).then(unit => {
-      if (!unit) return Promise.reject(new Error(`Unit ${unitID} not found`))
-
-      billData = Object.assign({}, billData, {
-        managerID : null,
-        ownerID   : unit.ownerID,
-        locationID: unit.locationID,
-        unitID    : unit.unitID,
-      });
-      return this.create(billData, options);
-    })
-  },
-
-  createBillForLocation(locationID, billData, options) {
-    let Locations = createLocationRepository();
-    return Locations.findById(locationID).then(location => {
-      if (!location) return Promise.reject(new Error(`Location ${locationID} not found`))
-
-      billData = Object.assign({}, billData, {
-        managerID : null,
-        ownerID   : location.ownerID,
-        locationID: location.locationID,
-        unitID    : null,
-      });
-      return this.create(billData, options);
-    })
-  },
-
-  createBillForOwner(ownerID, billData, options) {
-    billData = Object.assign({}, billData, {
-      managerID : null,
-      ownerID   : ownerID,
-      locationID: null,
-      unitID    : null,
-    });
-    return this.create(billData, options);
-  },
-
-  createBillForManager(managerID, billData, options) {
-    billData = Object.assign({}, billData, {
-      managerID : managerID,
-      ownerID   : null,
-      locationID: null,
-      unitID    : null,
-    });
-    return this.create(billData, options);
-  },
-
-  create(billData, options) {
-    const eLedgerTable = `${db.getPrefix()}_expenses.eLedger`;
-    const insertFields = [
-      'managerID',
-      'ownerID',
-      'locationID',
-      'unitID',
-      'createDate',
-      'dueDate',
-      'vendorID',
-      'expenseID',
-      'amount',
-      'comment',
-      'payment',
-    ];
-    const values = insertFields.map(fld => billData[fld]);
-    const placeHolders = insertFields.map(fld => '?').join(',');
-    const insertQuery = `
-      INSERT INTO ${eLedgerTable} (
-        ${insertFields.join(',')}
-      ) VALUES (
-        ${placeHolders}
-      )`;
-    const selectQuery = `SELECT * FROM ${eLedgerTable} WHERE entryID=?`;
-    return db.query(insertQuery, values, options)
-      .then(res => db.query(selectQuery, [res.insertId]))
-      .then(rows => (rows && rows.length) ? rows[0] : null);
-  }
-};
-
-export default function createBill() {
-  let repo = Object.create(Bill);
-  return repo;
+function updateBill(bill, options) {
+  if (!bill.id) throw new Error("Cannot update a bill without an id");
+  const eLedgerTable = `${db.getPrefix()}_expenses.eLedger`;
+  const fields  = bill.FIELDS.filter(fld => bill[fld] !== undefined);
+  const sets = fields.map(fld => `${fld}=${db.escape(bill[fld])}`).join(',');
+  const updateSQL = `UPDATE ${eLedgerTable} SET ${sets} WHERE entryID=${bill.id}`;
+  return db.query(updateSQL, options)
+    .then(res => Repo.getById(bill.id, options));
+}
+function insertBill(bill, options) {
+  if (bill.id) throw new Error("Cannot insert a bill that already has an id");
+  const eLedgerTable = `${db.getPrefix()}_expenses.eLedger`;
+  const fields  = bill.FIELDS.filter(fld => bill[fld] !== undefined);
+  const placeHolders = fields.map(fld => '?').join(',');
+  const values = fields.map(fld => bill[fld]);
+  const insertSQL = `INSERT INTO ${eLedgerTable} (${fields.join(',')}) VALUES (${placeHolders})`;
+  return db.query(insertSQL, values, options)
+    .then(res => Repo.getById(res.insertId, options));
 }

@@ -20,8 +20,9 @@ const PORT = process.env.PORT || config.port || 8080;
 
 const logger = createLogger(config.log);
 
-let app = express();
+const app = express();
 const pool = dbInit(config);
+export default app; // export for testing
 
 // =============================================================================
 // ==== ROUTES =================================================================

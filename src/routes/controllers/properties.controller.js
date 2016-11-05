@@ -1,8 +1,8 @@
 import _omit from 'lodash/omit';
 import _pick from 'lodash/pick';
 import createOwnerRepository from '../../domain/assets/owner.repository';
-import createLocationRepository from '../../domain/assets/location.repository';
-import createUnitRepository from '../../domain/assets/unit.repository';
+import UnitRepo from '../../domain/assets/unit.repository';
+import LocationRepo from '../../domain/assets/location.repository';
 
 export function getOwners(req, res, next) {
   const Owners = createOwnerRepository();
@@ -27,7 +27,6 @@ export function getOwners(req, res, next) {
 
 
 export function getLocation(req, res, next) {
-  const Locations = createLocationRepository();
   const locationSearchFields = ['locationID', 'shortHand', 'ownerID', 'zoneID', 'active'];
   const ownerSearchFields = ['managedBy', 'managerID'];
 
@@ -46,7 +45,7 @@ export function getLocation(req, res, next) {
 
   // Unless specified, default to active owners only
   if (!where.hasOwnProperty('location.active')) where['location.active'] = 1;
-  Locations.find(where)
+  LocationRepo.find(where)
     .then(locations => {
       res.json(locations);
     })
@@ -55,8 +54,6 @@ export function getLocation(req, res, next) {
 
 
 export function getUnit(req, res, next) {
-  const Units = createUnitRepository();
-
   const options = {
     limit: req.query.limit || 50,
     offset: req.query.offset || 0,
@@ -66,7 +63,7 @@ export function getUnit(req, res, next) {
   const where = _omit(req.query, ['limit', 'offset', 'fields']);
   where.unitID = req.params.unitID || where.unitID;
 
-  Units.find(where, options)
+  UnitRepo.find(where, options)
     .then(units => res.json(units) )
     .catch(next);
 }
