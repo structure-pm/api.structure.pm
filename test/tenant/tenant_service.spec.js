@@ -8,7 +8,8 @@ import OwnerRepo from '../../src/domain/assets/owner.repository';
 import Tenants from '../../src/domain/tenant';
 
 describe.only("Tenant | Service", () => {
-  const ownerID = 'testOwner';
+  const ownerID = 'testOwner',
+        ownerStartingBalance = 1000;
   const locationID = 'testLocation';
   let unitID, tenant, owner, lease;
 
@@ -26,7 +27,7 @@ describe.only("Tenant | Service", () => {
     owner = OwnerRepo.create({
       ownerID: ownerID,
       lName: 'TestCo',
-      ledgerBalance: 1000,
+      ledgerBalance: ownerStartingBalance,
     });
 
     lease = LeaseRepo.create({
@@ -90,14 +91,23 @@ describe.only("Tenant | Service", () => {
       db.query(`SELECT * FROM structutest_income.iLedger`)
         .then(incomes => {
           expect(incomes.length).to.equal(3);
-          expect(incomes.reduce(amtSum)).to.equal(payments.reduce(amtSum));
+          expect(incomes.reduce(amtSum,0)).to.equal(payments.reduce(amtSum,0));
           done();
         })
         .catch(done);
     })
 
     it("updates the owner balance", done => {
-      done();
+      const expectedDiff = payments.reduce(amtSum,0);
+      const expectedLedgerBalance = ownerStartingBalance + expectedDiff;
+      db.query(`SELECT ledgerBalance from structutest_assets.owner where ownerID='${ownerID}'`)
+        .then(owners => {
+          const owner = owners[0];
+          expect(owner).to.be.ok;
+          expect(owner.ledgerBalance).to.equal(expectedLedgerBalance);
+          done();
+        })
+        .catch(done);
     })
 
     it("updates the tenant balance", done => {
