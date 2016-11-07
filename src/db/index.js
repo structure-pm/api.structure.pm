@@ -16,6 +16,7 @@ export function init(config, options) {
 }
 
 export function end() {
+  console.log("ENDING");
   return new Promise((resolve, reject) => {
     if (!initialized) return resolve();
     pool.end(err => {
@@ -54,7 +55,7 @@ export function query(sql, values, options) {
         err.sql = mysql.format(sql, values);
         return reject(err);
       }
-      
+
       return resolve(rows);
     }
 

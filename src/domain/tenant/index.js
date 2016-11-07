@@ -49,8 +49,9 @@ Tenant.makePaymentsOnLease = function(lease, paymentData) {
             OwnerRepo.save(owner, {transaction: t})
           ]).return(incomes); //.spread((tenant, owner) => [lease, owner, tenant, incomes])
         })
-        .tap(() => db.commit(t))
-        .catch(err => db.rollback(t).throw(err)) );
+        .tap(() => db.commit(t) )
+        .catch(err => db.rollback(t).throw(err) )
+      );
     })
 }
 

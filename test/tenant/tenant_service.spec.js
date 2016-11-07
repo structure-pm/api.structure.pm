@@ -129,8 +129,58 @@ describe.only("Tenant | Service", () => {
       .catch(done);
     })
 
-    it("rolls back when there is an error", done => {
-      done();
+    describe("When things go bad", () => {
+      before(done => {
+        Promise.all([
+          db.query(`UPDATE structutest_assets.tenant SET rentBalance=${tenantStartingRentBalance}, feeBalance=${tenantStartingFeeBalance} where tenantID=${tenant.id}`),
+          db.query(`UPDATE structutest_assets.owner SET ledgerBalance=${ownerStartingBalance} WHERE ownerID='${ownerID}'`),
+          db.query(`TRUNCATE TABLE structutest_income.iLedger`),
+          // db.query(`TRUNCATE TABLE structutest_expenses.vendor`),
+          // db.query(`TRUNCATE TABLE structutest_imports.imported_unknown_account`),
+          // db.query(`TRUNCATE TABLE structutest_imports.imported_account_asset`),
+          // db.query(`TRUNCATE TABLE structutest_log.google_cloud_objects`),
+        ])
+          .then(() => done())
+          .catch(done);
+      })
+
+      it("rolls back when there is an error", done => {
+        const mockOwnerRepo = Object.assign({}, OwnerRepo, {
+          save: function() { return Promise.reject(new Error("Owner Save Error"))}
+        });
+        Tenants.__Rewire__('OwnerRepo', mockOwnerRepo);
+        db.query('SELECT * FROM structutest_income.iLedger')
+          .then(incomes => {
+            expect(incomes.length).to.equal(0);
+          })
+          .then(() => Tenants.makePaymentsOnLease(lease, payments) )
+          .then(incomes => {
+            done(new Error("Should have thrown an error"));
+          })
+          .catch(err => err )
+          .then(() => db.query('SELECT * FROM structutest_income.iLedger'))
+          .then(incomes => {
+            expect(incomes.length).to.equal(0);
+            return db.query(`SELECT * FROM structutest_assets.tenant WHERE tenantID=${tenant.id}`)
+          })
+          .then(tenants => {
+            expect(tenants.length).to.equal(1);
+            expect(tenants[0].rentBalance).to.equal(tenantStartingRentBalance);
+            expect(tenants[0].feeBalance).to.equal(tenantStartingFeeBalance);
+            return db.query(`SELECT * FROM structutest_assets.owner WHERE ownerID='${ownerID}'`)
+          })
+          .then(owners => {
+            expect(owners.length).to.equal(1);
+            expect(owners[0].ledgerBalance).to.equal(ownerStartingBalance);
+          })
+          .then(() => {
+            Assets.__ResetDependency__('OwnerRepo');
+            done();
+          })
+          .catch(done);
+
+      })
+
     })
   });
 });
