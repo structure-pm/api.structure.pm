@@ -58,6 +58,7 @@ describe.only("Tenant | Service", () => {
       db.query(`TRUNCATE TABLE structutest_assets.lease`),
       db.query(`TRUNCATE TABLE structutest_assets.unit`),
       db.query(`TRUNCATE TABLE structutest_assets.location`),
+      db.query(`TRUNCATE TABLE structutest_income.iLedger`),
       // db.query(`TRUNCATE TABLE structutest_expenses.vendor`),
       // db.query(`TRUNCATE TABLE structutest_imports.imported_unknown_account`),
       // db.query(`TRUNCATE TABLE structutest_imports.imported_account_asset`),
@@ -69,13 +70,14 @@ describe.only("Tenant | Service", () => {
   });
 
   describe("makePaymentsOnLease()", () => {
+    const amtSum = (sum, income) => sum + income.amount;
+    const payments = [
+      {incomeID: 1, amount: 10, isAdjustment: false, isFee: false},
+      {incomeID: 1, amount: 20, isAdjustment: true, isFee: false},
+      {incomeID: 1, amount: 30, isAdjustment: false, isFee: true},
+    ];
 
     it("makes a multiple payments without error", done => {
-      const payments = [
-        {incomeID: 1, amount: 10, isAdjustment: false, isFee: false},
-        {incomeID: 1, amount: 20, isAdjustment: true, isFee: false},
-        {incomeID: 1, amount: 30, isAdjustment: false, isFee: true},
-      ];
       Tenants.makePaymentsOnLease(lease, payments)
         .then(incomes => {
           expect(incomes.length).to.equal(3);
@@ -85,7 +87,13 @@ describe.only("Tenant | Service", () => {
     })
 
     it("adds payment entries to the db", done => {
-      done();
+      db.query(`SELECT * FROM structutest_income.iLedger`)
+        .then(incomes => {
+          expect(incomes.length).to.equal(3);
+          expect(incomes.reduce(amtSum)).to.equal(payments.reduce(amtSum));
+          done();
+        })
+        .catch(done);
     })
 
     it("updates the owner balance", done => {
