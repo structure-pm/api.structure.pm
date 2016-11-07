@@ -9,7 +9,9 @@ import Tenants from '../../src/domain/tenant';
 
 describe.only("Tenant | Service", () => {
   const ownerID = 'testOwner',
-        ownerStartingBalance = 1000;
+        ownerStartingBalance = 1000,
+        tenantStartingRentBalance = 100,
+        tenantStartingFeeBalance = 200;
   const locationID = 'testLocation';
   let unitID, tenant, owner, lease;
 
@@ -20,8 +22,8 @@ describe.only("Tenant | Service", () => {
     tenant = TenantRepo.create({
       firstName: 'Tester',
       lastName: 'Jones',
-      rentBalance: 100,
-      feeBalance: 200
+      rentBalance: tenantStartingRentBalance,
+      feeBalance: tenantStartingFeeBalance
     });
 
     owner = OwnerRepo.create({
@@ -92,6 +94,9 @@ describe.only("Tenant | Service", () => {
         .then(incomes => {
           expect(incomes.length).to.equal(3);
           expect(incomes.reduce(amtSum,0)).to.equal(payments.reduce(amtSum,0));
+          incomes.forEach(income => {
+            expect(income.leaseID).to.equal(lease.leaseID);
+          })
           done();
         })
         .catch(done);
@@ -111,7 +116,17 @@ describe.only("Tenant | Service", () => {
     })
 
     it("updates the tenant balance", done => {
-      done();
+      const expectedRentBalance = tenantStartingRentBalance - payments.filter(p=>!p.isFee).reduce(amtSum,0);
+      const expectedFeeBalance = tenantStartingFeeBalance - payments.filter(p=>p.isFee).reduce(amtSum,0);
+      db.query(`SELECT rentBalance, feeBalance from structutest_assets.tenant where tenantID=${tenant.tenantID}`)
+      .then(tenants => {
+        const tenant = tenants[0];
+        expect(tenant).to.be.ok;
+        expect(tenant.rentBalance).to.equal(expectedRentBalance);
+        expect(tenant.feeBalance).to.equal(expectedFeeBalance);
+        done();
+      })
+      .catch(done);
     })
 
     it("rolls back when there is an error", done => {
