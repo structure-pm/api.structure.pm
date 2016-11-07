@@ -8,11 +8,17 @@ const FIELDS = [
   'achCred', 'wireless', 'petRent', 'otherCharge1', 'otherChargeDesc1', 'otherCharge2',
   'otherChargeDesc2'
 ];
+const ALL_FIELDS = FIELDS.concat([
+  'locationID', 'ownerID'
+]);
 
 export default function Lease(data) {
-  const fields = FIELDS.filter(fld => data[fld] !== undefined);
+  const fields = ALL_FIELDS.filter(fld => data[fld] !== undefined);
   data = _pick(data, fields);
 
   Object.assign(this, data);
+  this.assistType = this.assistType || '';
   this.id = data[ID_FIELD];
 }
+
+Lease.Fields = FIELDS;

@@ -6,8 +6,12 @@ import * as db from '../../db';
 const Repo = {};
 export default Repo;
 
+Repo.create = function(data) {
+  return new Lease(data);
+}
+
 Repo.get = function(id, options) {
-  return repo.find({leaseID: id}, options)
+  return Repo.find({leaseID: id}, options)
     .then(leases => (leases && leases.length) ? leases[0] : null);
 }
 
@@ -49,4 +53,29 @@ Repo.find = function(where, options) {
       return db.query(selectSQL, values, options);
     })
     .map(row => new Lease(row));
+}
+
+Repo.save = function(lease, options) {
+  return (lease.id) ? updateLease(lease, options) : insertLease(lease, options);
+}
+
+function updateLease(lease, options) {
+  if (!lease.id) return Promise.reject(new Error('Cannot update lease with an id'));
+  const fields = Lease.Fields.filter(fld => lease[fld] !== undefined);
+  const sets = fields.map(fld => `${fld}=${db.escape(lease[fld])}`).join(',');
+  const leaseTable = `${db.getPrefix()}_assets.lease`;
+  const updateSQL = `UPDATE ${leaseTable} SET ${sets} WHERE leaseID=${lease.id}`;
+  return db.query(updateSQL, options)
+    .then(() => Repo.get(lease.id));
+}
+
+function insertLease(lease, options) {
+  if (lease.id) return Promise.reject(new Error('Cannot insert an lease that already has an id'));
+  const fields = Lease.Fields.filter(fld => lease[fld] !== undefined);
+  const placeholders = fields.map(fld => '?').join(',');
+  const values = fields.map(fld => lease[fld]);
+  const leaseTable = `${db.getPrefix()}_assets.lease`;
+  const insertSQL = `INSERT INTO ${leaseTable} (${fields.join(',')}) VALUES (${placeholders})`;
+  return db.query(insertSQL, values, options)
+    .then(res => Repo.get(res.insertId));
 }

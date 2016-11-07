@@ -1,11 +1,10 @@
 import _omit from 'lodash/omit';
 import _pick from 'lodash/pick';
-import createOwnerRepository from '../../domain/assets/owner.repository';
+import OwnerRepo from '../../domain/assets/owner.repository';
 import UnitRepo from '../../domain/assets/unit.repository';
 import LocationRepo from '../../domain/assets/location.repository';
 
 export function getOwners(req, res, next) {
-  const Owners = createOwnerRepository();
   const searchFields = ['ownerID', 'managedBy', 'managerID', 'nickname', 'lName', 'fName', 'active'];
 
   let where = _pick(req.query, searchFields);
@@ -18,7 +17,7 @@ export function getOwners(req, res, next) {
 
   // Unless specified, default to active owners only
   if (!where.hasOwnProperty('active')) where.active = 1;
-  Owners.find(where)
+  OwnerRepo.find(where)
     .then(owners => {
       res.json(owners);
     })

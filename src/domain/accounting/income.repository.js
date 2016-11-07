@@ -1,3 +1,4 @@
+import Promise from 'bluebird';
 import _pick from 'lodash/pick';
 import * as db from '../../db';
 import Income from './income';
@@ -6,10 +7,15 @@ const Repo = {};
 export default Repo;
 
 
+Repo.create = function(data) {
+  return new Income(data);
+}
+
 Repo.get = function(id, options) {
   return Repo.find({entryID: id}, options)
     .then(incomes => (incomes && incomes.length) ? incomes[0] : null);
 }
+
 
 Repo.find = function(where, options) {
   return Promise.resolve()

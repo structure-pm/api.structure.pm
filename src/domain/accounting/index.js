@@ -3,7 +3,7 @@ import IncomeRepo from './income.repository';
 const Accounting = {};
 export default Accounting;
 
-Accounting.addIncome = function(data) {
-  return IncomeRepo.create(data)
-    .then(income => IncomeRepo.save(income));
+Accounting.addIncome = function(data, dbOptions) {
+  const income = IncomeRepo.create(data)
+  return IncomeRepo.save(income, dbOptions);
 }

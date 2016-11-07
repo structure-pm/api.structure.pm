@@ -1,3 +1,4 @@
+import _pick from 'lodash/pick';
 
 const ID_FIELD = 'entryID';
 const FIELDS = [
@@ -6,12 +7,13 @@ const FIELDS = [
   'adjustment', 'feeAdded', 'comment', 'deposited', 'depID', 'depDate', 'reconciled',
 ];
 const REQUIRED_FIELDS = [
-  'dateStamp', 'amount'
+  'dateStamp', 'amount', 'incomeID'
 ]
 
 export default function Income(data) {
   const fields = FIELDS.filter(fld => data[fld] !== undefined);
   data = _pick(data, fields);
+  data.dateStamp = data.dateStamp || new Date();
 
   const missing = REQUIRED_FIELDS.filter(fld => !data.hasOwnProperty(fld));
   if (missing.length) {
