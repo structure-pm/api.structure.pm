@@ -44,7 +44,7 @@ const mockGCloud = {
 }
 
 
-describe.only("Use Case | Importing a scanned bill", () => {
+describe("Use Case | Importing a scanned bill", () => {
   const ownerID = 'testOwn';
   const locationID = 'testLoc';
   let unitID, scanUploadURL;

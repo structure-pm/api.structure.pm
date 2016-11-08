@@ -19,9 +19,10 @@ Assets.saveBufferToGFile = function(gfileData, buffer, dbOptions) {
 
 Assets.moveGFile = function(fileObjectId, gfileData, dbOptions) {
   dbOptions = dbOptions || {};
-  const {assetType, assetID, filename} = gfileData;
-  const newFilename = `${assetType}/${assetID}/${filename}`;
+
+  const destinationGFile = GFileRepo.create(gfileData);
   const returnTransaction = !!dbOptions.transaction;
+
   let currentFilename;
 
 
@@ -31,14 +32,14 @@ Assets.moveGFile = function(fileObjectId, gfileData, dbOptions) {
 
     return GFileRepo.get(fileObjectId)
       .then(gfile => {
-        currentFilename = `${gfile.assetType}/${gfile.assetID}/${gfile.filename}`;
-        gfile.assetType = assetType;
-        gfile.assetID = assetID;
-        gfile.filename = filename;
+        currentFilename = gfile.getAssetFilename();
+        gfile.assetType = destinationGFile.assetType;
+        gfile.assetID = destinationGFile.assetID;
+        gfile.filename = destinationGFile.filename;
         return GFileRepo.save(gfile, options);
       })
       .then(gfile => {
-        return gcloud.moveFile(currentFilename, newFilename).return(gfile);
+        return gcloud.moveFile(currentFilename, destinationGFile.getAssetFilename()).return(gfile);
       })
       .tap(gfile => { if (!returnTransaction) db.commit(t); } )
       .catch(err => {
