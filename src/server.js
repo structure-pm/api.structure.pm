@@ -12,6 +12,7 @@ import scanRouter from './routes/scan';
 import propertiesRouter from './routes/properties';
 import ccPaymentRouter from './routes/ccpayment';
 import reportsRouter from './routes/reports';
+import fileRouter from './routes/file';
 
 
 
@@ -43,6 +44,7 @@ app.use(scanRouter(config));
 app.use(propertiesRouter(config));
 app.use(ccPaymentRouter(config));
 app.use(reportsRouter(config));
+app.use(fileRouter(config));
 // -----------------------------------------------------------------------------
 
 // =============================================================================
