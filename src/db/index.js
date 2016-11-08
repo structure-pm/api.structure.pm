@@ -16,7 +16,6 @@ export function init(config, options) {
 }
 
 export function end() {
-  console.log("ENDING");
   return new Promise((resolve, reject) => {
     if (!initialized) return resolve();
     pool.end(err => {

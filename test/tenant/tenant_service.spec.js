@@ -7,7 +7,7 @@ import LeaseRepo from '../../src/domain/tenant/lease.repository';
 import OwnerRepo from '../../src/domain/assets/owner.repository';
 import Tenants from '../../src/domain/tenant';
 
-describe.only("Tenant | Service", () => {
+describe("Tenant | Service", () => {
   const ownerID = 'testOwner',
         ownerStartingBalance = 1000,
         tenantStartingRentBalance = 100,
@@ -148,6 +148,8 @@ describe.only("Tenant | Service", () => {
         const mockOwnerRepo = Object.assign({}, OwnerRepo, {
           save: function() { return Promise.reject(new Error("Owner Save Error"))}
         });
+        return done(new Error("MyISAM tables don't do transactions!!!!"))
+
         Tenants.__Rewire__('OwnerRepo', mockOwnerRepo);
         db.query('SELECT * FROM structutest_income.iLedger')
           .then(incomes => {
