@@ -17,6 +17,7 @@ export default function GFile(data) {
   data = _pick(data, FIELDS);
 
   Object.assign(this, data);
+  if (!this.title) this.title = this.filename;
 }
 
 GFile.prototype.getAssetFilename = function() {
