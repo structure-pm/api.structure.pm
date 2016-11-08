@@ -1,8 +1,32 @@
 import {expect} from 'chai';
+import * as db from '../../src/db';
+import config from '../../src/config';
 import ImportScanService from '../../src/domain/scan/importScan.service';
 
 describe("ImportScan service", () => {
+  const ownerID = 'testOwn';
+  const locationID = 'testLoc';
+  let unitID;
 
+  before(done => {
+    db.init(config, {force: true});
+    return db.query(`INSERT INTO structutest_assets.location (locationID, ownerID) VALUES ('${locationID}', '${ownerID}')`)
+      .then(res => db.query(`INSERT INTO structutest_assets.unit (locationID) VALUES ('${locationID}')`))
+      .then(res => unitID = res.insertId)
+      .then(() => done())
+      .catch(done);
+  });
+  after(done => {
+    Promise.all([
+      db.query(`TRUNCATE TABLE structutest_assets.unit`),
+      db.query(`TRUNCATE TABLE structutest_assets.location`),
+      db.query(`TRUNCATE TABLE structutest_imports.imported_unknown_account`),
+      db.query(`TRUNCATE TABLE structutest_imports.imported_account_asset`),
+    ])
+      .then(() => db.end() )
+      .then(() => done())
+      .catch(done);
+  });
 
 
   describe("importScan", () => {
@@ -44,15 +68,10 @@ describe("ImportScan service", () => {
           vendorID: 1,
           expenseID: 1,
           assetType: 'location',
-          assetID: 'testlocation',
+          assetID: locationID,
         })}
       };
-      const BillRepo = {
-        create(billData) { fired = true; return Promise.resolve({id: billID})}
-      }
       let ImportScan = ImportScanService();
-      ImportScan.repositories.AccountAssets = AccountAssetRepo;
-      ImportScan.repositories.Bills = BillRepo;
       ImportScan.importScan({
         AccountNumber: "abc",
         CreditorNumber: 1,

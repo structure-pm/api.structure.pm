@@ -1,8 +1,14 @@
 import * as db from '../../db';
 import Promise from 'bluebird';
+import GFile from './gfile';
 
 const gcfile = {};
 export default gcfile;
+
+
+gcfile.create = function(fileData) {
+  return new GFile(fileData);
+}
 
 gcfile.get = function(id, options) {
   return gcfile.find({id: id}, options)
@@ -18,21 +24,9 @@ gcfile.find = function(where, options) {
   const whereClause = (whereClauses.length) ? "WHERE " + whereClauses.join(' AND ') : '';
   const selectQuery = `SELECT * FROM ${gcfileTable} ${whereClause}`;
   return db.query(selectQuery, options)
+    .map(row => new GFile(row));
 }
 
-gcfile.create = function(fileData) {
-  return {
-    title: fileData.filename,
-    filename: fileData.filename,
-    description: fileData.description,
-    mimeType: fileData.mimeType,
-    assetType: fileData.assetType,
-    assetID: fileData.assetID,
-    finalized: true,
-    userID: fileData.userID,
-    createdAt: new Date(),
-  }
-}
 
 gcfile.save = function(file, options) {
   return Promise.resolve( (file.id) ? updateFile(file, options) : insertFile(file, options) );

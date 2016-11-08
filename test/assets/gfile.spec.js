@@ -115,7 +115,9 @@ describe("Assets | GFile functions", () => {
         })
         .catch(err => GCloudFile.get(gFileID))
         .then(gFile => {
-          expect(gFile).to.deep.equal(currentFile);
+          expect(gFile.assetType).to.equal(currentFile.assetType);
+          expect(gFile.assetID).to.equal(currentFile.assetID);
+          expect(gFile.filename).to.equal(currentFile.filename);
           done();
         })
         .catch(done);

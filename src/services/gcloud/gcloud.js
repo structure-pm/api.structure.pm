@@ -65,10 +65,11 @@ function getPublicUrl(filename) {
   return `https://storage.googleapis.com/${GOOGLE_DEFAULT_BUCKET}/${filename}`;
 }
 
-function signedUrl(action, filename, options={}) {
+function signedUrl(action, options={}) {
   return new Promise((resolve, reject) => {
     if (!options.filename) throw new Error("options.filename is a required parameter.");
-
+    const filename = options.filename;
+    
     const bucket = gcs.bucket(GOOGLE_DEFAULT_BUCKET);
     const file = bucket.file(filename);
     const expires = minutesFromNow(options.expiresInMinutes || 10);

@@ -1,7 +1,7 @@
 import request from 'request-promise';
 import * as db from '../../db';
 import gcloud from '../../services/gcloud'
-import gcloudFile from './gcloudFile.repository';
+import GFileRepo from './gcloudFile.repository';
 
 
 const Assets = {};
@@ -9,20 +9,20 @@ export default Assets;
 
 Assets.saveBufferToGFile = function(gfileData, buffer, dbOptions) {
 
-  const {assetType, assetID, filename, mimeType} = gfileData;
-  const cloudFilename = `${assetType}/${assetID}/${filename}`;
+  const gFile = GFileRepo.create(gfileData);
+  const cloudFilename = gFile.getAssetFilename();
 
-  return gcloud.saveBufferToCloud(cloudFilename, mimeType, buffer)
-    .then(publicUrl => gcloudFile.create({assetType, assetID, filename, mimeType}))
-    .then(gfile => gcloudFile.save(gfile, dbOptions));
+  return gcloud.saveBufferToCloud(cloudFilename, gFile.mimeType, buffer)
+    .then(publicUrl => GFileRepo.save(gFile, dbOptions));
 }
 
 
 Assets.moveGFile = function(fileObjectId, gfileData, dbOptions) {
   dbOptions = dbOptions || {};
-  const {assetType, assetID, filename} = gfileData;
-  const newFilename = `${assetType}/${assetID}/${filename}`;
+
+  const destinationGFile = GFileRepo.create(gfileData);
   const returnTransaction = !!dbOptions.transaction;
+
   let currentFilename;
 
 
@@ -30,16 +30,16 @@ Assets.moveGFile = function(fileObjectId, gfileData, dbOptions) {
 
     const options = Object.assign({}, dbOptions, {transaction: t});
 
-    return gcloudFile.get(fileObjectId)
+    return GFileRepo.get(fileObjectId)
       .then(gfile => {
-        currentFilename = `${gfile.assetType}/${gfile.assetID}/${gfile.filename}`;
-        gfile.assetType = assetType;
-        gfile.assetID = assetID;
-        gfile.filename = filename;
-        return gcloudFile.save(gfile, options);
+        currentFilename = gfile.getAssetFilename();
+        gfile.assetType = destinationGFile.assetType;
+        gfile.assetID = destinationGFile.assetID;
+        gfile.filename = destinationGFile.filename;
+        return GFileRepo.save(gfile, options);
       })
       .then(gfile => {
-        return gcloud.moveFile(currentFilename, newFilename).return(gfile);
+        return gcloud.moveFile(currentFilename, destinationGFile.getAssetFilename()).return(gfile);
       })
       .tap(gfile => { if (!returnTransaction) db.commit(t); } )
       .catch(err => {
@@ -51,5 +51,5 @@ Assets.moveGFile = function(fileObjectId, gfileData, dbOptions) {
 }
 
 Assets.getGFilesForAsset = function(assetType, assetID, dbOptions) {
-  return gcloudFile.find({assetType, assetID}, dbOptions);
+  return GFileRepo.find({assetType, assetID}, dbOptions);
 }
