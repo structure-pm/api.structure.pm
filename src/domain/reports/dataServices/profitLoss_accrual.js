@@ -160,6 +160,14 @@ export function partitionBy(options, queryTypeSelector) {
 
 }
 
+// TODO: Break that monster function above into smaller ones
+export function buildTimePartition() {
+
+}
+export function buildLocationPartition() {
+
+}
+
 
 export default function pl(options) {
   const dbPrefix = db.getPrefix();
