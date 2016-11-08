@@ -45,8 +45,8 @@ export function partitionBy(options, queryTypeSelector) {
       defaultColSQL: data => `SUM(
         ${dbPrefix}_assets.month_diff(
           GREATEST(${data.prefix}.startDate, '${data.start}'),
-          LAST_DAY(LEAST(${data.prefix}.endDate, '${data.end}')) )
-        ) * ${data.prefix}.rent AS ${data.field}`,
+          LAST_DAY(LEAST(${data.prefix}.endDate, '${data.end}')) ) * ${data.prefix}.rent
+        )  AS ${data.field}`,
       timeColSQL: data => `SUM(CASE
         WHEN ${data.prefix}.startDate < '${data.end}' AND ${data.prefix}.endDate > '${data.start}'
         THEN ${dbPrefix}_assets.month_diff(
@@ -157,6 +157,14 @@ export function partitionBy(options, queryTypeSelector) {
       return { columnSQL: columnSQL.join(',\n'), partitions }
     })
 
+
+}
+
+// TODO: Break that monster function above into smaller ones
+export function buildTimePartition() {
+
+}
+export function buildLocationPartition() {
 
 }
 
