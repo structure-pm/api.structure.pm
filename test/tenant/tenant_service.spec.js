@@ -120,14 +120,14 @@ describe.only("Tenant | Service", () => {
       const expectedRentBalance = tenantStartingRentBalance - rentSum;
       const expectedFeeBalance = tenantStartingFeeBalance + feeSum;
       db.query(`SELECT rentBalance, feeBalance from structutest_assets.tenant where tenantID=${tenant.tenantID}`)
-      .then(tenants => {
-        const tenant = tenants[0];
-        expect(tenant).to.be.ok;
-        expect(tenant.rentBalance).to.equal(expectedRentBalance);
-        expect(tenant.feeBalance).to.equal(expectedFeeBalance);
-        done();
-      })
-      .catch(done);
+        .then(tenants => {
+          const tenant = tenants[0];
+          expect(tenant).to.be.ok;
+          expect(tenant.rentBalance).to.equal(expectedRentBalance);
+          expect(tenant.feeBalance).to.equal(expectedFeeBalance);
+          done();
+        })
+        .catch(done);
     })
 
     describe("When things go bad", () => {

@@ -11,9 +11,8 @@ const FIELDS = [
   'reconcileSeparately', 'cTemplateID', 'active', 'managedBy', 'repairedBy',
   'listedBy', 'color', 'premium', 'comment'
 ];
-const REQUIRED_FIELDS = [
-  'ownerID', 'lName'
-]
+const REQUIRED_FIELDS = [ 'ownerID', 'lName' ];
+
 
 export default function Owner(data) {
   const fields = FIELDS.filter(fld => data[fld] !== undefined);
