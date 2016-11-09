@@ -29,3 +29,10 @@ export default function Owner(data) {
 }
 
 Owner.Fields = FIELDS;
+
+
+Owner.prototype.adjustBalance = function(entry) {
+  if (!entry.feeAdded) {
+    this.ledgerBalance = (this.ledgerBalance || 0) + entry.amount;
+  }
+}

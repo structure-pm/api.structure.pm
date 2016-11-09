@@ -1,4 +1,6 @@
+import Promise from 'bluebird';
 import _pick from 'lodash/pick';
+import LeaseRepo from './lease.repository';
 
 const ID_FIELD = 'tenantID';
 const FIELDS = [
@@ -20,10 +22,29 @@ const FIELDS = [
 
 export default function Tenant(data) {
   const fields = FIELDS.filter(fld => data[fld] !== undefined);
-  data = _pick(data, fields);
+  data = Object.assign({}, {
+    rentBalance: 0,
+    feeBalance: 0,
+  }, _pick(data, fields));
 
   Object.assign(this, data);
   this.id = data[ID_FIELD];
 }
 
 Tenant.Fields = FIELDS;
+
+
+Tenant.prototype.getCurrentLease = function() {
+  if (this._currentLease) return Promise.resolve(this._currentLease);
+  return LeaseRepo.find({tenantID: this.id, active: 1})
+    .tap(lease => this._currentLease = lease)
+}
+
+
+Tenant.prototype.adjustBalance = function(entry) {
+  if (entry.feeAdded) {
+    this.feeBalance = (this.feeBalance || 0) + entry.amount;
+  } else {
+    this.rentBalance = (this.rentBalance || 0) - entry.amount;
+  }
+}

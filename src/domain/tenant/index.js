@@ -10,50 +10,54 @@ const Tenant = {};
 export default Tenant;
 
 
+const postToLedger = function(lease, postData, options) {
+  // For reasons that defy rational scrutiny, in Structure, a fee may
+  // not have an incomeID.  Explicitly set it to null here if the entry
+  // is a fee.
+  const entryData = Object.assign({}, postData, {
+    leaseID   : lease.id,
+    adjustment: (postData.isAdjustment) ? 1 : 0,
+    feeAdded  : (postData.isFee) ? 1 : 0,
+    incomeID  : (postData.isFee) ? null : postData.incomeID
+  });
+
+  return Accounting.addIncome(entryData, options);
+}
+
+
+
 Tenant.makePaymentsOnLease = function(lease, paymentData) {
   if (!Array.isArray(paymentData)) paymentData = [paymentData];
-  const leaseID = lease.id;
-  paymentData = paymentData.map(pd => Object.assign(pd, {
-    leaseID   : lease.id,
-    adjustment: (pd.isAdjustment) ? 1 : 0,
-    feeAdded  : (pd.isFee) ? 1 : 0,
-  }))
-  const totalRentBalance = paymentData.reduce((sum, pd) => sum + (!pd.isFee) ? pd.amount : 0, 0 );
-  const totalFeeBalance = paymentData.reduce((sum, pd) => sum + (pd.isFee) ? pd.amount : 0, 0 );
 
-  // 1. Get the lease
-  return LeaseRepo.get(leaseID)
-    // 2. Get the owner
-    .then(lease => {
-      if (!lease) throw new Error(`Lease ${leaseID} not found`);
-      return OwnerRepo.get(lease.ownerID).then(owner => [lease, owner]);
-    })
-    // 3. Get the tenant
-    .spread((lease, owner) => {
-      if (!owner) throw new Error(`Owner ${lease.ownerID} from lease ${leaseID} not found`);
-      return TenantRepo.get(lease.tenantID).then(tenant => [lease, owner, tenant]);
-    })
-    .spread((lease, owner, tenant) => {
-      if (!tenant) throw new Error(`Tenant ${lease.tenantID} from lease ${leaseID} not found`);
+  const owner = OwnerRepo.get(lease.ownerID);
+  const tenant = TenantRepo.get(lease.tenantID);
 
-      return db.beginTransaction().then(t => Promise
-        // 4. Create the iLedger entries for the payments (witin transaction)
-        .map(paymentData, pData => Accounting.addIncome(pData, {transaction: t}))
-        // 5. Update the owner and tenant balances (within transaction)
-        .then(incomes => {
-          owner.ledgerBalance += (totalRentBalance + totalFeeBalance);
-          tenant.rentBalance -= totalRentBalance;
-          tenant.feeBalance -= totalFeeBalance;
+  return Promise.all([owner, tenant]).spread((owner, tenant) => {
+    if (!owner) throw new Error(`Owner ${lease.ownerID} from lease ${lease.id} not found`);
+    if (!tenant) throw new Error(`Tenant ${lease.tenantID} from lease ${lease.id} not found`);
+
+    return db.beginTransaction().then(t => {
+      return Promise.resolve(paymentData)
+        .map(pd => postToLedger(lease, pd, {transaction: t}))
+        .map(entry => {
+          owner.adjustBalance(entry);
+          tenant.adjustBalance(entry);
+          return entry;
+        })
+        .then(entries => {
           return Promise.all([
-            TenantRepo.save(tenant, {transaction: t}),
-            OwnerRepo.save(owner, {transaction: t})
-          ]).return(incomes); //.spread((tenant, owner) => [lease, owner, tenant, incomes])
+            OwnerRepo.save(owner, {transaction: t}),
+            TenantRepo.save(tenant, {transaction: t})
+          ]).return(entries);
         })
         .tap(() => db.commit(t) )
         .catch(err => db.rollback(t).throw(err) )
-      );
     })
+  })
+
 }
+
+
 
 Tenant.getBalance = function(tenantId) {
 

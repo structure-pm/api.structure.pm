@@ -7,7 +7,7 @@ import LeaseRepo from '../../src/domain/tenant/lease.repository';
 import OwnerRepo from '../../src/domain/assets/owner.repository';
 import Tenants from '../../src/domain/tenant';
 
-describe("Tenant | Service", () => {
+describe.only("Tenant | Service", () => {
   const ownerID = 'testOwner',
         ownerStartingBalance = 1000,
         tenantStartingRentBalance = 100,
@@ -79,6 +79,8 @@ describe("Tenant | Service", () => {
       {incomeID: 1, amount: 20, isAdjustment: true, isFee: false},
       {incomeID: 1, amount: 30, isAdjustment: false, isFee: true},
     ];
+    const rentSum = payments.filter(p=>!p.isFee).reduce((sum,p) => sum + p.amount, 0);
+    const feeSum = payments.filter(p=>p.isFee).reduce((sum,p) => sum + p.amount, 0);
 
     it("makes a multiple payments without error", done => {
       Tenants.makePaymentsOnLease(lease, payments)
@@ -103,8 +105,7 @@ describe("Tenant | Service", () => {
     })
 
     it("updates the owner balance", done => {
-      const expectedDiff = payments.reduce(amtSum,0);
-      const expectedLedgerBalance = ownerStartingBalance + expectedDiff;
+      const expectedLedgerBalance = ownerStartingBalance + rentSum;
       db.query(`SELECT ledgerBalance from structutest_assets.owner where ownerID='${ownerID}'`)
         .then(owners => {
           const owner = owners[0];
@@ -116,8 +117,8 @@ describe("Tenant | Service", () => {
     })
 
     it("updates the tenant balance", done => {
-      const expectedRentBalance = tenantStartingRentBalance - payments.filter(p=>!p.isFee).reduce(amtSum,0);
-      const expectedFeeBalance = tenantStartingFeeBalance - payments.filter(p=>p.isFee).reduce(amtSum,0);
+      const expectedRentBalance = tenantStartingRentBalance - rentSum;
+      const expectedFeeBalance = tenantStartingFeeBalance + feeSum;
       db.query(`SELECT rentBalance, feeBalance from structutest_assets.tenant where tenantID=${tenant.tenantID}`)
       .then(tenants => {
         const tenant = tenants[0];

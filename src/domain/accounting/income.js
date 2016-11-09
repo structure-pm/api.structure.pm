@@ -7,7 +7,7 @@ const FIELDS = [
   'adjustment', 'feeAdded', 'comment', 'deposited', 'depID', 'depDate', 'reconciled',
 ];
 const REQUIRED_FIELDS = [
-  'dateStamp', 'amount', 'incomeID'
+  'dateStamp', 'amount'
 ]
 
 export default function Income(data) {
@@ -22,6 +22,8 @@ export default function Income(data) {
 
   Object.assign(this, data);
   this.id = data[ID_FIELD];
+  this.feeAdded = parseInt(this.feeAdded || 0);
+  this.adjustment = parseInt(this.adjustment || 0);
 }
 
 Income.Fields = FIELDS;
