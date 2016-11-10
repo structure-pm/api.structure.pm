@@ -5,6 +5,7 @@ const FIELDS = [
   ID_FIELD,
   'leaseID', 'accountID', 'locationID', 'invoiceID', 'dateStamp', 'amount', 'incomeID',
   'adjustment', 'feeAdded', 'comment', 'deposited', 'depID', 'depDate', 'reconciled',
+  'receivedPaymentId',
 ];
 const REQUIRED_FIELDS = [
   'dateStamp', 'amount'

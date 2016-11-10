@@ -39,6 +39,14 @@ Repo.find = function(where, options) {
     .map(row => new Income(row));
 }
 
+Repo.destroy = function(income, options) {
+  if (!income.id) return Promise.resolve();
+  const iLedgerTable = `${db.getPrefix()}_income.iLedger`;
+
+  const delSQL = `DELETE FROM ${iLedgerTable} WHERE entryID=${db.escape(income.id)}`;
+  return db.query(delSQL, options);
+}
+
 Repo.save = function(income, options) {
   return (income.id) ? updateIncome(income, options) : insertIncome(income, options);
 }
