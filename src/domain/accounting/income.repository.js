@@ -36,7 +36,7 @@ Repo.find = function(where, options) {
         WHERE ${whereClause}`
       return db.query(selectSQL, values, options);
     })
-    .map(row => new Income(row));
+    .then(rows => (options.raw) ? rows : rows.map(row => new Income(row)) );
 }
 
 Repo.destroy = function(income, options) {

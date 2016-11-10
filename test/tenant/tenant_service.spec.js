@@ -7,7 +7,7 @@ import LeaseRepo from '../../src/domain/tenant/lease.repository';
 import OwnerRepo from '../../src/domain/assets/owner.repository';
 import Tenants from '../../src/domain/tenant';
 
-describe.only("Tenant | Service", () => {
+describe("Tenant | Service", () => {
   const ownerID = 'testOwner',
         ownerStartingBalance = 1000,
         tenantStartingRentBalance = 100,

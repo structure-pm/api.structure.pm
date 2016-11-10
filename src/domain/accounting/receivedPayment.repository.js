@@ -16,7 +16,7 @@ Repo.create = function(data) {
 Repo.get = function(receivedPaymentId, options) {
   return Promise.all([
     Repo.find({entryID: receivedPaymentId}, options),
-    IncomeRepo.find({receivedPaymentId})
+    IncomeRepo.find({receivedPaymentId}, {raw: true})
   ])
     .spread((receivedPayments, lines) => {
       if (!receivedPayments.length) return null;

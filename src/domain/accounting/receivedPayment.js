@@ -12,10 +12,9 @@ const defaults = {
   items: 0,
 }
 
-export default function ReceivedPayment(paymentData) {
-  this.setLines(paymentData.lines || []);
-
-  Object.assign(this, _pick(paymentData, FIELDS));
+export default function ReceivedPayment(paymentData={}) {
+  this.setLines([]);
+  Object.assign(this, defaults, _pick(paymentData, FIELDS));
 }
 
 ReceivedPayment.Fields = FIELDS;
@@ -25,7 +24,7 @@ ReceivedPayment.prototype.setLines = function(lines) {
   if (!Array.isArray(lines)) lines = [lines];
   this._lines = [];
   this._deletedLines = [];
-  lines.forEach(this._addLine);
+  lines.forEach(line => this._addLine(line));
 }
 
 ReceivedPayment.prototype.getLines = function() {
@@ -41,11 +40,11 @@ ReceivedPayment.prototype.getDeletedLines = function() {
 }
 
 ReceivedPayment.prototype.addLine = function(line) {
-  line._dirty = true;
-  this._addLine(line);
+  this._addLine(line, true);
 }
 
 ReceivedPayment.prototype.updateLine = function(lineIdx, line) {
+  line = new Income(line);
   line._dirty = true;
   this._lines.splice(lineIdx, 1, line);
   this._updateAggregates();
@@ -57,7 +56,9 @@ ReceivedPayment.prototype.removeLine = function(lineIdx) {
   this._updateAggregates();
 }
 
-ReceivedPayment.prototype._addLine = function(line) {
+ReceivedPayment.prototype._addLine = function(line, isDirty) {
+  line = new Income(line);
+  line._dirty = isDirty;
   this._lines.push(line);
   this._updateAggregates();
 }
