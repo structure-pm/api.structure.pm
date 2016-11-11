@@ -15,7 +15,7 @@ Repo.create = function(data) {
 
 Repo.get = function(receivedPaymentId, options) {
   return Promise.all([
-    Repo.find({entryID: receivedPaymentId}, options),
+    Repo.find({id: receivedPaymentId}, options),
     IncomeRepo.find({receivedPaymentId}, {raw: true})
   ])
     .spread((receivedPayments, lines) => {
@@ -62,36 +62,40 @@ Repo.save = function(receivedPayment, options) {
 
 function updateReceivedPayment(receivedPayment, options) {
   if (!receivedPayment.id) return Promise.reject(new Error('Cannot update receivedPayment with an id'));
-  const iLedgerTable = `${db.getPrefix()}_receivedPayment.iLedger`;
+  const receivedPaymentTable = `${db.getPrefix()}_income.receivedPayment`;
 
   const linesToUpdate = receivedPayment.getDirtyLines();
   const linesToDelete = receivedPayment.getDeletedLines();
 
   const fields = ReceivedPayment.Fields.filter(fld => receivedPayment[fld] !== undefined);
   const sets = fields.map(fld => `${fld}=${db.escape(receivedPayment[fld])}`).join(',');
-  const updateSQL = `UPDATE ${iLedgerTable} SET ${sets} WHERE entryID=${receivedPayment.id}`;
+  const updateSQL = `UPDATE ${receivedPaymentTable} SET ${sets} WHERE entryID=${receivedPayment.id}`;
 
   return Promise.all([
     Promise.map(linesToUpdate, line => IncomeRepo.save(line, options)),
     Promise.map(linesToDelete, line => IncomeRepo.destroy(line, options))
   ])
     .then(() => db.query(updateSQL, options))
-    .then(() => Repo.get(receivedPayment.id))
+    .then(() => Repo.get(receivedPayment.id, options))
 
 }
 
 function insertReceivedPayment(receivedPayment, options) {
   if (receivedPayment.id) return Promise.reject(new Error('Cannot insert an receivedPayment that already has an id'));
-  const iLedgerTable = `${db.getPrefix()}_receivedPayment.iLedger`;
+  const receivedPaymentTable = `${db.getPrefix()}_income.receivedPayment`;
 
   const lines = receivedPayment.getLines();
 
   const fields = ReceivedPayment.Fields.filter(fld => receivedPayment[fld] !== undefined);
   const placeholders = fields.map(fld => '?').join(',');
   const values = fields.map(fld => receivedPayment[fld]);
-  const insertSQL = `INSERT INTO ${iLedgerTable} (${fields.join(',')}) VALUES (${placeholders})`;
+  const insertSQL = `INSERT INTO ${receivedPaymentTable} (${fields.join(',')}) VALUES (${placeholders})`;
 
-  return Promise.map(lines => IncomeRepo.save(line))
-    .then(() => db.query(insertSQL, values, options))
-    .then(res => Repo.get(res.insertId));
+  const insert = db.query(insertSQL, values, options);
+  const insertLines = insert
+    .then(insert => lines.map(line => line.attachToPayment(insert.insertId)))
+    .map(line => IncomeRepo.save(line))
+
+  return Promise.all([insert, insertLines])
+    .spread((insert, insertLines) => Repo.get(insert.insertId, options))
 }

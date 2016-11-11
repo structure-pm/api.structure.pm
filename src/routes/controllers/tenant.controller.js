@@ -1,35 +1,39 @@
 import Promise from 'bluebird';
 import Tenant from '../../domain/tenant';
 import LeaseRepo from '../../domain/tenant/lease.repository';
+import TenantRepo from '../../domain/tenant/tenant.repository';
 
-export function makePayments(req, res, next) {
-  const required = [
-    'leaseID', 'dateStamp', 'amount', 'incomeID',
-    'isAdjustment', 'isFee', 'comment',
-  ]
-
-  const payments = (Array.isArray(req.body)) ? req.body : [req.body];
-
-  for (let i = 0; i < payments.length; i++) {
-    const missing = required.filter(fld => !payments[i].hasOwnProperty(fld));
-    if (missing.length) {
-      const err = new Error(`${req.path} is missing required fields ${missing.join(',')}`);
-      err.status = 400;
-      return next(err);
-    }
-  }
-
-  const leases = payments.map(p => p.leaseID);
-  const allSame = !!leases.reduce((prev, lse) => (prev === lse) ? lse : false);
-  if (!allSame) {
-    const err = new Error(`Batched payments must be for the same lease`);
+export function receivePayment(req, res, next) {
+  const missing = ['paymentDate', 'lines'].filter(fld => !req.body[fld]);
+  if (missing.length) {
+    const err = new Error(`Missing required fields [${missing.join(',')}]`);
     err.status = 400;
     return next(err);
   }
-  const leaseID = (leases.length) ? leases[0] : null;
 
-  LeaseRepo.get(leaseID)
-    .then(lease => Tenant.makePaymentsOnLease(lease, payments))
-    .then(results => res.json(results))
+  if (!req.body.lines.length) {
+    const err = new Error(`Payments require at lease one line item`);
+    err.status = 400;
+    return next(err);
+  }
+
+
+  const lease = (req.query.leaseID)
+    ? LeaseRepo.get(req.query.leaseID)
+    : TenantRepo.get(req.params.tenantID)
+        .then(tenant => tenant.getCurrentLease());
+
+  return lease
+    .then(lease => {
+      if (''+lease.tenantID !== req.params.tenantID) {
+        console.log("MISMATCH", lease.tenantID, req.params.tenantID)
+        const err = new Error("Lease does not match tenant");
+        err.status = 400;
+        throw err
+      }
+      return lease;
+    })
+    .then(lease => Tenant.receivePayment(lease, req.body))
+    .then(response => res.json(response))
     .catch(next);
 }

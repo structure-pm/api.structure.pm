@@ -62,6 +62,7 @@ describe("Tenant | Service", () => {
       db.query(`TRUNCATE TABLE structutest_assets.unit`),
       db.query(`TRUNCATE TABLE structutest_assets.location`),
       db.query(`TRUNCATE TABLE structutest_income.iLedger`),
+      db.query(`TRUNCATE TABLE structutest_income.receivedPayment`),
       // db.query(`TRUNCATE TABLE structutest_expenses.vendor`),
       // db.query(`TRUNCATE TABLE structutest_imports.imported_unknown_account`),
       // db.query(`TRUNCATE TABLE structutest_imports.imported_account_asset`),
@@ -72,32 +73,43 @@ describe("Tenant | Service", () => {
       .catch(done);
   });
 
-  describe("makePaymentsOnLease()", () => {
-    const amtSum = (sum, income) => sum + income.amount;
-    const payments = [
-      {incomeID: 1, amount: 10, isAdjustment: false, isFee: false},
-      {incomeID: 1, amount: 20, isAdjustment: true, isFee: false},
-      {incomeID: 1, amount: 30, isAdjustment: false, isFee: true},
-    ];
-    const rentSum = payments.filter(p=>!p.isFee).reduce((sum,p) => sum + p.amount, 0);
-    const feeSum = payments.filter(p=>p.isFee).reduce((sum,p) => sum + p.amount, 0);
+  describe("receivePayment()", () => {
+    let paymentData, receivedPayment;
+    let paySum;
 
-    it("makes a multiple payments without error", done => {
-      Tenants.makePaymentsOnLease(lease, payments)
-        .then(incomes => {
-          expect(incomes.length).to.equal(3);
+
+    before(() => {
+      paymentData = {
+        leaseID: lease.id,
+        paymentDate: new Date(),
+        lines: [
+          {amount: 10, incomeID: 1},
+          {amount: 20, incomeID: 1},
+          {amount: 30, incomeID: 1},
+        ]
+      }
+      paySum = 60;
+    })
+
+    it("receives the payment without error", done => {
+      Tenants.receivePayment(lease, paymentData)
+        .then(payment => {
+          expect(payment).to.be.ok;
+          expect(payment.amount).to.equal(60);
+          expect(payment.id).to.be.ok;
+          receivedPayment = payment;
           done();
         })
         .catch(done);
-    })
+    });
 
     it("adds payment entries to the db", done => {
       db.query(`SELECT * FROM structutest_income.iLedger`)
         .then(incomes => {
           expect(incomes.length).to.equal(3);
-          expect(incomes.reduce(amtSum,0)).to.equal(payments.reduce(amtSum,0));
           incomes.forEach(income => {
             expect(income.leaseID).to.equal(lease.leaseID);
+            expect(income.receivedPaymentId).to.equal(receivedPayment.id);
           })
           done();
         })
@@ -105,7 +117,7 @@ describe("Tenant | Service", () => {
     })
 
     it("updates the owner balance", done => {
-      const expectedLedgerBalance = ownerStartingBalance + rentSum;
+      const expectedLedgerBalance = ownerStartingBalance + paySum;
       db.query(`SELECT ledgerBalance from structutest_assets.owner where ownerID='${ownerID}'`)
         .then(owners => {
           const owner = owners[0];
@@ -117,29 +129,22 @@ describe("Tenant | Service", () => {
     })
 
     it("updates the tenant balance", done => {
-      const expectedRentBalance = tenantStartingRentBalance - rentSum;
-      const expectedFeeBalance = tenantStartingFeeBalance + feeSum;
+      const expectedBalance = tenantStartingRentBalance + tenantStartingFeeBalance - paySum;
       db.query(`SELECT rentBalance, feeBalance from structutest_assets.tenant where tenantID=${tenant.tenantID}`)
         .then(tenants => {
           const tenant = tenants[0];
           expect(tenant).to.be.ok;
-          expect(tenant.rentBalance).to.equal(expectedRentBalance);
-          expect(tenant.feeBalance).to.equal(expectedFeeBalance);
+          expect(tenant.rentBalance + tenant.feeBalance).to.equal(expectedBalance);
           done();
         })
         .catch(done);
     })
-
     describe("When things go bad", () => {
       before(done => {
         Promise.all([
           db.query(`UPDATE structutest_assets.tenant SET rentBalance=${tenantStartingRentBalance}, feeBalance=${tenantStartingFeeBalance} where tenantID=${tenant.id}`),
           db.query(`UPDATE structutest_assets.owner SET ledgerBalance=${ownerStartingBalance} WHERE ownerID='${ownerID}'`),
           db.query(`TRUNCATE TABLE structutest_income.iLedger`),
-          // db.query(`TRUNCATE TABLE structutest_expenses.vendor`),
-          // db.query(`TRUNCATE TABLE structutest_imports.imported_unknown_account`),
-          // db.query(`TRUNCATE TABLE structutest_imports.imported_account_asset`),
-          // db.query(`TRUNCATE TABLE structutest_log.google_cloud_objects`),
         ])
           .then(() => done())
           .catch(done);
@@ -181,9 +186,7 @@ describe("Tenant | Service", () => {
             done();
           })
           .catch(done);
-
       })
-
     })
   });
 });

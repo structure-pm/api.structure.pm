@@ -1,10 +1,12 @@
+import Moment from 'moment';
 import _pick from 'lodash/pick';
 import Income from './income';
 
 const ID_FIELD = 'id';
 const FIELDS = [
   ID_FIELD,
-  'leaseID', 'tenantID', 'comment', 'amount', 'items', 'createdAt', 'modifiedAt',
+  'paymentDate', 'leaseID', 'tenantID', 'accountID', 'locationID', 'invoiceID',
+  'comment', 'amount', 'items', 'createdAt', 'modifiedAt',
 ];
 
 const defaults = {
@@ -13,8 +15,14 @@ const defaults = {
 }
 
 export default function ReceivedPayment(paymentData={}) {
-  this.setLines([]);
+  this._lines = [];
+  this._deletedLines = [];
   Object.assign(this, defaults, _pick(paymentData, FIELDS));
+  this.paymentDate = (this.paymentDate)
+    ? Moment(this.paymentDate, ["MM-DD-YYYY", "YYYY-MM-DD"])
+    : Moment();
+  this.paymentDate = this.paymentDate.format('YYYY-MM-DD')
+  this.setLines(paymentData.lines || []);
 }
 
 ReceivedPayment.Fields = FIELDS;
@@ -59,6 +67,13 @@ ReceivedPayment.prototype.removeLine = function(lineIdx) {
 ReceivedPayment.prototype._addLine = function(line, isDirty) {
   line = new Income(line);
   line._dirty = isDirty;
+  line.dateStamp = this.paymentDate
+  line.leaseID = this.leaseID
+  line.tenantID = this.tenantID
+  line.accountID = this.accountID
+  line.locationID = this.locationID
+  line.invoiceID = this.invoiceID
+  line.comment = this.comment
   this._lines.push(line);
   this._updateAggregates();
 }

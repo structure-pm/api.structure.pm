@@ -35,7 +35,7 @@ Repo.find = function(where={}, options={}) {
 
 Repo.save = function(owner, options) {
   const ownerTable = `${db.getPrefix()}_assets.owner`;
-  db.query(`SELECT ownerID from ${ownerTable} WHERE ownerID='${owner.id}'`)
+  return db.query(`SELECT ownerID from ${ownerTable} WHERE ownerID='${owner.id}'`)
     .then(rows => (rows.length) ? updateOwner(owner, options) : insertOwner(owner, options) );
 }
 

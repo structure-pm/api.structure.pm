@@ -38,6 +38,41 @@ describe.only("Accounting | ReceivedPayment", () => {
       rp.addLine(new Income({amount: 123}));
       expect(rp._lines[0]._dirty).to.be.ok;
     })
+
+    it("lines inherit leaseID etc from parent payment", () => {
+      const rp1 = new ReceivedPayment({leaseID: 1});
+      const rp2 = new ReceivedPayment({accountID: 2});
+      const rp3 = new ReceivedPayment({tenantID: 3});
+      const rp4 = new ReceivedPayment({locationID: '4'});
+      const rp5 = new ReceivedPayment({invoiceID: 5});
+
+      expect(rp1.leaseID).to.be.ok;
+      expect(rp2.accountID).to.be.ok;
+      expect(rp3.tenantID).to.be.ok;
+      expect(rp4.locationID).to.be.ok;
+      expect(rp5.invoiceID).to.be.ok;
+
+      rp1.addLine({amount: 50});
+      rp2.addLine({amount: 50});
+      rp3.addLine({amount: 50});
+      rp4.addLine({amount: 50});
+      rp5.addLine({amount: 50});
+
+      expect(rp1._lines[0].leaseID).to.equal(rp1.leaseID)
+      expect(rp2._lines[0].accountID).to.equal(rp2.accountID)
+      expect(rp3._lines[0].tenantID).to.equal(rp3.tenantID)
+      expect(rp4._lines[0].locationID).to.equal(rp4.locationID)
+      expect(rp5._lines[0].invoiceID).to.equal(rp5.invoiceID)
+    })
+
+    it("lines inherit the payment Date from parent payment", () => {
+      const rp = new ReceivedPayment();
+      rp.addLine({amount:1, dateStamp: '2008-11-4'});
+      rp.addLine({amount:2});
+      expect(rp.paymentDate).to.be.ok;
+      expect(rp._lines[0].dateStamp).to.equal(rp.paymentDate);
+      expect(rp._lines[1].dateStamp).to.equal(rp.paymentDate);
+    })
   })
 
   describe("setLine()", () => {

@@ -28,3 +28,8 @@ export default function Income(data) {
 }
 
 Income.Fields = FIELDS;
+
+Income.prototype.attachToPayment = function(paymentId) {
+  this.receivedPaymentId = paymentId;
+  return this;
+}

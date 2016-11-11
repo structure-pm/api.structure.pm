@@ -17,7 +17,7 @@ Repo.get = function(id, options) {
 }
 
 
-Repo.find = function(where, options) {
+Repo.find = function(where, options = {}) {
   return Promise.resolve()
     .then(() => {
       where = _pick(where || {}, Income.Fields);
@@ -36,7 +36,7 @@ Repo.find = function(where, options) {
         WHERE ${whereClause}`
       return db.query(selectSQL, values, options);
     })
-    .then(rows => (options.raw) ? rows : rows.map(row => new Income(row)) );
+    .then(rows => (options.raw) ? rows : rows.map(row => new Income(row)) )
 }
 
 Repo.destroy = function(income, options) {
@@ -68,6 +68,7 @@ function insertIncome(income, options) {
   const values = fields.map(fld => income[fld]);
   const iLedgerTable = `${db.getPrefix()}_income.iLedger`;
   const insertSQL = `INSERT INTO ${iLedgerTable} (${fields.join(',')}) VALUES (${placeholders})`;
+
   return db.query(insertSQL, values, options)
     .then(res => Repo.get(res.insertId));
 }

@@ -37,11 +37,13 @@ Tenant.Fields = FIELDS;
 Tenant.prototype.getCurrentLease = function() {
   if (this._currentLease) return Promise.resolve(this._currentLease);
   return LeaseRepo.find({tenantID: this.id, active: 1})
+    .then(leases => (leases || leases.length) ? leases[0] : null)
     .tap(lease => this._currentLease = lease)
 }
 
 
 Tenant.prototype.adjustBalance = function(entry) {
+  // TODO: Fees should be paid down first, before rent
   if (entry.feeAdded) {
     this.feeBalance = (this.feeBalance || 0) + entry.amount;
   } else {
