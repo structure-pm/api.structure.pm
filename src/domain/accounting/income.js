@@ -33,3 +33,9 @@ Income.prototype.attachToPayment = function(paymentId) {
   this.receivedPaymentId = paymentId;
   return this;
 }
+
+Income.prototype.markDeposited = function(depID, depositDate) {
+  this.deposited = 1;
+  this.depID = depID;
+  this.depDate = depositDate;
+}

@@ -1,7 +1,9 @@
 import Promise from 'bluebird';
 import _pick from 'lodash/pick';
+import sqlFromMongo from '../../lib/sqlFromMongo';
 import * as db from '../../db';
 import Income from './income';
+
 
 const Repo = {};
 export default Repo;
@@ -20,24 +22,24 @@ Repo.get = function(id, options) {
 Repo.find = function(where, options = {}) {
   return Promise.resolve()
     .then(() => {
-      where = _pick(where || {}, Income.Fields);
       const iLedgerTable = `${db.getPrefix()}_income.iLedger`;
 
+      where = _pick(where || {}, Income.Fields);
       if (!Object.keys(where).length) {
         throw new Error("No filters sent to query");
       }
 
-      const whereClause = Object.keys(where).map(key => `${key}=?`).join(' AND ');
-      const values = Object.keys(where).map(key => where[key]);
+      const whereClause = sqlFromMongo(where);
 
       const selectSQL = `SELECT
         il.*
         FROM ${iLedgerTable} il
         WHERE ${whereClause}`
-      return db.query(selectSQL, values, options);
+      return db.query(selectSQL, options);
     })
     .then(rows => (options.raw) ? rows : rows.map(row => new Income(row)) )
 }
+
 
 Repo.destroy = function(income, options) {
   if (!income.id) return Promise.resolve();

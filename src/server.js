@@ -14,6 +14,7 @@ import ccPaymentRouter from './routes/ccpayment';
 import reportsRouter from './routes/reports';
 import tenantRouter from './routes/tenant';
 import fileRouter from './routes/file';
+import ownerRouter from './routes/owner';
 
 
 
@@ -47,6 +48,7 @@ app.use(ccPaymentRouter(config));
 app.use(reportsRouter(config));
 app.use(fileRouter(config));
 app.use(tenantRouter(config));
+app.use(ownerRouter(config));
 // -----------------------------------------------------------------------------
 
 // =============================================================================

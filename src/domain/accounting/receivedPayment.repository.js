@@ -69,7 +69,7 @@ function updateReceivedPayment(receivedPayment, options) {
 
   const fields = ReceivedPayment.Fields.filter(fld => receivedPayment[fld] !== undefined);
   const sets = fields.map(fld => `${fld}=${db.escape(receivedPayment[fld])}`).join(',');
-  const updateSQL = `UPDATE ${receivedPaymentTable} SET ${sets} WHERE entryID=${receivedPayment.id}`;
+  const updateSQL = `UPDATE ${receivedPaymentTable} SET ${sets} WHERE id=${receivedPayment.id}`;
 
   return Promise.all([
     Promise.map(linesToUpdate, line => IncomeRepo.save(line, options)),

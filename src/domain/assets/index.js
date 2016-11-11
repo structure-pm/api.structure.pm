@@ -2,7 +2,7 @@ import request from 'request-promise';
 import * as db from '../../db';
 import gcloud from '../../services/gcloud'
 import GFileRepo from './gcloudFile.repository';
-
+import DepositRepo from '../accounting/deposits.repository';
 
 const Assets = {};
 export default Assets;
@@ -52,4 +52,8 @@ Assets.moveGFile = function(fileObjectId, gfileData, dbOptions) {
 
 Assets.getGFilesForAsset = function(assetType, assetID, dbOptions) {
   return GFileRepo.find({assetType, assetID}, dbOptions);
+}
+
+Assets.getOwnerUndeposited = function(ownerID) {
+  DepositRepo.getOwnerUndeposited(ownerID)
 }

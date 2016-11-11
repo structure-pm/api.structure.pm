@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS receivedPayment (
   amount DECIMAL(10,2),
   items INT,
   comment VARCHAR(500),
+  depID INT,
+  depDate DATE,
   createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   modifiedAt TIMESTAMP NOT NULL
 );
