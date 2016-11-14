@@ -63,7 +63,11 @@ export function handleUpload(req, res, next) {
   const gfileData = { assetType, assetID, filename, description, title, mimeType }
 
   Assets.saveFileToGFile(gfileData, localpath)
-    .then(result => res.json(result))
+    .then(gfile => {
+      return GCloud.getUrl({filename: gfile.getAssetFilename()})
+        .then(url => Object.assign(gfile, {url}))
+    })
+    .then(gfile => res.json(gfile))
     .catch(next)
     .finally(() => deleteLocalFile(localpath))
 }
