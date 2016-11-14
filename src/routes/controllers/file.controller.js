@@ -52,7 +52,7 @@ export function handleUpload(req, res, next) {
 
   const assetType   = req.query.assetType || req.body.assetType,
         assetID     = req.query.assetID || req.body.assetID,
-        filename    = file.originalname || req.query.filename || req.body.filename,
+        filename    = req.query.filename || req.body.filename || file.originalname,
         description = req.query.description || req.body.description || 'Uploaded File',
         title       = req.query.title || req.body.title || filename,
         localpath   = file.path,
@@ -64,12 +64,13 @@ export function handleUpload(req, res, next) {
 
   Assets.saveFileToGFile(gfileData, localpath)
     .then(result => res.json(result))
-    .catch(next);
+    .catch(next)
+    .finally(() => deleteLocalFile(localpath))
 }
 
 
 function deleteLocalFile(localpath) {
-  return Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     function callback(err) {
       if (err) return reject(err);
       resolve();
