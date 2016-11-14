@@ -75,7 +75,6 @@ Repo.getOwnerUndeposited = function(ownerID, options={}) {
       own.ownerID = ${db.escape(ownerID)}
       AND pay.depID IS NULL
   `
-
   const query = `SELECT * FROM (${iLedgerSelect} UNION ALL ${paymentSelect}) undep ORDER BY paymentDate`;
   return db.query(query, options);
 }

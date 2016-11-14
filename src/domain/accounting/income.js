@@ -1,4 +1,5 @@
 import _pick from 'lodash/pick';
+import {formatDateForDb} from '../../lib/utils';
 
 const ID_FIELD = 'entryID';
 const FIELDS = [
@@ -14,7 +15,7 @@ const REQUIRED_FIELDS = [
 export default function Income(data) {
   const fields = FIELDS.filter(fld => data[fld] !== undefined);
   data = _pick(data, fields);
-  data.dateStamp = data.dateStamp || new Date();
+  data.dateStamp = formatDateForDb(data.dateStamp || new Date());
 
   const missing = REQUIRED_FIELDS.filter(fld => !data.hasOwnProperty(fld));
   if (missing.length) {
@@ -37,5 +38,11 @@ Income.prototype.attachToPayment = function(paymentId) {
 Income.prototype.markDeposited = function(depID, depositDate) {
   this.deposited = 1;
   this.depID = depID;
-  this.depDate = depositDate;
+  this.depDate = formatDateForDb(depositDate);
+}
+
+Income.prototype.revertDeposit = function() {
+  this.deposited = 0;
+  this.depID = null;
+  this.depDate = null;
 }

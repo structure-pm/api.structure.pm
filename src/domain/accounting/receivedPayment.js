@@ -100,3 +100,12 @@ ReceivedPayment.prototype.markDeposited = function(depID, depositDate) {
     line._dirty = true;
   });
 }
+
+ReceivedPayment.prototype.revertDeposit = function() {
+  this.depID = null;
+  this.depDate = null;
+  this.getLines().forEach(line => {
+    line.revertDeposit();
+    line._dirty = true;
+  })
+}

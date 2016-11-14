@@ -41,6 +41,7 @@ Accounting.makeDeposit = function(ownerID, depositDate, deposits) {
       Promise.map(payments, payment => {
         if (payment.depID) throw new Error(`Payment ${payment.id} is already deposited`)
         payment.markDeposited(depID, depositDate);
+        return payment;
       }).map(payment => PayRepo.save(payment, {transaction}) )
     ])
       .tap(() => db.commit(transaction))
@@ -51,4 +52,38 @@ Accounting.makeDeposit = function(ownerID, depositDate, deposits) {
       }))
   })
 
+}
+
+Accounting.revertDeposit = function(depositID) {
+  return Promise.all([
+    PayRepo.find({depID: depositID}),
+    IncomeRepo.find({depID: depositID}),
+    db.beginTransaction(),
+  ])
+    .spread((payments, incomes, transaction) => {
+
+      return Promise.try(() => {
+        // If we have a receivedPayment object, that's the only object we need
+        // to update since revertDeposit and save will update the child income
+        // lines automatically
+        if (payments.length) {
+          return Promise.map(payments, payment => {
+            payment.revertDeposit();
+            return PayRepo.save(payment, {transaction});
+          })
+        } else {
+          return Promise.map(incomes, income => {
+            income.revertDeposit();
+            return IncomeRepo.save(income, {transaction})
+          })
+        }
+      })
+      .tap(() => db.commit(transaction))
+      .catch(err => db.rollback(transaction).throw(err))
+
+    });
+}
+
+Accounting.reallocatePayment = function() {
+  // TODO
 }

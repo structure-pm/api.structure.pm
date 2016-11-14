@@ -15,6 +15,7 @@ import reportsRouter from './routes/reports';
 import tenantRouter from './routes/tenant';
 import fileRouter from './routes/file';
 import ownerRouter from './routes/owner';
+import accountingRouter from './routes/accounting';
 
 
 
@@ -49,6 +50,7 @@ app.use(reportsRouter(config));
 app.use(fileRouter(config));
 app.use(tenantRouter(config));
 app.use(ownerRouter(config));
+app.use(accountingRouter(config));
 // -----------------------------------------------------------------------------
 
 // =============================================================================
