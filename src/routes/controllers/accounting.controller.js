@@ -3,7 +3,7 @@ import Accounting from '../../domain/accounting';
 
 export function getDeposits(req, res, next) {
   const status = (req.query.status || 'undeposited').toLowerCase();
-  const {ownerID} = req.query;
+  const {ownerID, startDate, endDate} = req.query;
 
   if (['deposited', 'undeposited'].indexOf(status) === -1) {
     const err = new Error(`Unrecognized payment status '${status}'`);
@@ -20,9 +20,18 @@ export function getDeposits(req, res, next) {
   if (status === 'undeposited') {
     return DepositRepo.getOwnerUndeposited(ownerID)
       .then(undep => res.json(undep))
-      .catch(next)
-  } else {
-    return res.json([]);
+      .catch(next);
+  } else if (status === 'deposited') {
+
+    if (!startDate || !endDate) {
+      const err = new Error('Both startDate and endDate parameters are required');
+      err.status = 400;
+      return next(err);
+    }
+
+    return DepositRepo.getOwnerDeposited(ownerID, startDate, endDate)
+      .then(deps => res.json(deps))
+      .catch(next);
   }
 }
 
