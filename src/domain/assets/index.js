@@ -7,6 +7,16 @@ import GFileRepo from './gcloudFile.repository';
 const Assets = {};
 export default Assets;
 
+
+
+Assets.saveFileToGFile = function(gfileData, localFilename, dbOptions) {
+  const gFile = GFileRepo.create(gfileData);
+  const cloudFilename = gFile.getAssetFilename();
+
+  return gcloud.saveFileToCloud(cloudFilename, gFile.mimeType, localFilename)
+    .then(publicUrl => GFileRepo.save(gFile, dbOptions));
+}
+
 Assets.saveBufferToGFile = function(gfileData, buffer, dbOptions) {
 
   const gFile = GFileRepo.create(gfileData);

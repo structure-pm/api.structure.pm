@@ -1,3 +1,4 @@
+import fs from 'fs';
 import Promise from 'bluebird';
 import {minutesFromNow} from './util';
 import config from '../../config';
@@ -36,6 +37,18 @@ gcloud.deleteFile = function (filename) {
   });
 }
 
+gcloud.saveFileToCloud = function(gcsname, mimeType, localFilename) {
+  return new Promise((resolve, reject) => {
+    var file = gcs.bucket(GOOGLE_DEFAULT_BUCKET).file(gcsname);
+    fs.createReadStream(localFilename)
+      .pipe(file.createWriteStream({
+        metadata: { contentType: mimeType }
+      }))
+      .on('error', reject)
+      .on('finish', () => resolve(getPublicUrl(gcsname)));
+
+  })
+}
 
 gcloud.saveBufferToCloud = function(gcsname, mimeType, buffer) {
   return new Promise((resolve, reject) => {
@@ -69,7 +82,7 @@ function signedUrl(action, options={}) {
   return new Promise((resolve, reject) => {
     if (!options.filename) throw new Error("options.filename is a required parameter.");
     const filename = options.filename;
-    
+
     const bucket = gcs.bucket(GOOGLE_DEFAULT_BUCKET);
     const file = bucket.file(filename);
     const expires = minutesFromNow(options.expiresInMinutes || 10);
