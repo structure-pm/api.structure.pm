@@ -236,7 +236,7 @@ export default function pl(options) {
         COALESCE(il.accountID, loc.ownerID) = '${ownerID}'
         AND COALESCE(inv.dueDate, inv.invDate, il.dateStamp) BETWEEN '${startDate}' AND '${endDate}'
         AND (loc.locationID is NULL OR COALESCE(inv.dueDate, inv.invDate, il.dateStamp) >=d.startDate)
-        AND il.incomeID IS NOT NULL
+        AND il.incomeID IS NOT NULL and il.feeAdded != 1
         AND il.incomeID !=1 -- no rent payments
         and mgl.sIncome = 1
       GROUP BY
