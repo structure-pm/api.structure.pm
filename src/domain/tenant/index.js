@@ -1,8 +1,10 @@
+import Moment from 'moment';
 import Promise from 'bluebird';
 import LeaseRepo from './lease.repository';
 import TenantRepo from './tenant.repository';
 import OwnerRepo from '../assets/owner.repository';
 import PayRepo from '../accounting/receivedPayment.repository';
+import IncomeRepo from '../accounting/income.repository';
 import Accounting from '../accounting';
 import * as db from '../../db';
 
@@ -53,6 +55,31 @@ Tenant.receivePayment = function(lease, paymentData) {
 }
 
 
+
+// Tenant.getBalances = function(tenant) {
+//   const tenantID = tenant.id || tenant,
+//         today = Moment();
+//
+//   const leases = LeaseRepo.find({tenantID});
+//   const leaseIDs = leases.then(leases => leases.map(l => l.leaseID));
+//   const feeBalance = leaseIDs.then(leaseIDs =>IncomeRepo.find({
+//     leaseID: {$in: leaseIDs},
+//     feeAdded: 1
+//   }).then(fees)
+//
+//   const accruedRent = leases.then(leases => leases.reduce((sum,lse) => {
+//       const lseEndDate = Moment(lse.endDate,["MM-DD-YYYY", "YYYY-MM-DD"]);
+//       const end = (lseEndDate.isBefore(today)) ? lseEndDate : today.endOf('month');
+//             start = Moment(lse.startDate,["MM-DD-YYYY", "YYYY-MM-DD"]);
+//             rent = parseFloat(lse.rent);
+//
+//       return sum + (end.diff(start, 'months', true) * rent);
+//     }, 0) );
+//
+//   const rent
+//     .then(leases => [leases, leases.map(l => l.leaseID)])
+//     .spread(leases, lease)
+// }
 
 Tenant.getBalance = function(tenantId) {
 

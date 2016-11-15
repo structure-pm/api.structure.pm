@@ -12,6 +12,20 @@ Accounting.addIncome = function(data, dbOptions) {
   return IncomeRepo.save(income, dbOptions);
 }
 
+Accounting.addFee = function(data, dbOptions) {
+  data.adjustment = 0;
+  data.feeAdded = 1;
+  // data.incomeID = null;
+  return Accounting.addIncome(data, dbOptions);
+}
+
+Accounting.addCredit = function(data, dbOptions) {
+  data.adjustment = 1;
+  data.feeAdded = 0;
+  // data.incomeID = null;
+  return Accounting.addIncome(data, dbOptions);
+}
+
 
 Accounting.makeDeposit = function(ownerID, depositDate, deposits) {
   const iLedgerDeposits = Promise.map(
