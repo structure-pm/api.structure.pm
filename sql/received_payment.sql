@@ -25,7 +25,6 @@ ADD INDEX (receivedPaymentId);
 USE structudev_income;
 
 ALTER TABLE income ADD COLUMN isFee BOOL;
-ALTER TABLE income ADD COLUMN isCredit BOOL;
 
 
 -- Application Fee, Management Fee

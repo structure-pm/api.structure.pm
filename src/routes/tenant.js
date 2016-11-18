@@ -6,6 +6,7 @@ export default function(config) {
   router.post('/tenant/:tenantID/payments', tenant.receivePayment);
   router.post('/tenant/:tenantID/fees', tenant.addFee);
   router.post('/tenant/:tenantID/credits', tenant.addCredit);
+  router.get('/tenant/:tenantID/balance', tenant.getBalance);
 
   return router;
 }

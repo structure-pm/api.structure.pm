@@ -82,3 +82,12 @@ function makeLedgerAdjustment(type, tenantID, data) {
     }
   })
 }
+
+export function getBalance(req, res, next) {
+  const tenantID = req.params.tenantID;
+  const tenant = TenantRepo.get(tenantID);
+
+  return tenant.then(tenant => Tenant.getBalances(tenant))
+    .then(balances => res.json(balances))
+    .catch(next);
+}

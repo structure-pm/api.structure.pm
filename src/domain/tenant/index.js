@@ -6,6 +6,8 @@ import OwnerRepo from '../assets/owner.repository';
 import PayRepo from '../accounting/receivedPayment.repository';
 import IncomeRepo from '../accounting/income.repository';
 import Accounting from '../accounting';
+import ReadService from '../accounting/readService';
+import {rentPeriods} from '../../lib/utils'
 import * as db from '../../db';
 
 import PaymentRepo from '../accounting/receivedPayment.repository';
@@ -56,30 +58,53 @@ Tenant.receivePayment = function(lease, paymentData) {
 
 
 
-// Tenant.getBalances = function(tenant) {
-//   const tenantID = tenant.id || tenant,
-//         today = Moment();
-//
-//   const leases = LeaseRepo.find({tenantID});
-//   const leaseIDs = leases.then(leases => leases.map(l => l.leaseID));
-//   const feeBalance = leaseIDs.then(leaseIDs =>IncomeRepo.find({
-//     leaseID: {$in: leaseIDs},
-//     feeAdded: 1
-//   }).then(fees)
-//
-//   const accruedRent = leases.then(leases => leases.reduce((sum,lse) => {
-//       const lseEndDate = Moment(lse.endDate,["MM-DD-YYYY", "YYYY-MM-DD"]);
-//       const end = (lseEndDate.isBefore(today)) ? lseEndDate : today.endOf('month');
-//             start = Moment(lse.startDate,["MM-DD-YYYY", "YYYY-MM-DD"]);
-//             rent = parseFloat(lse.rent);
-//
-//       return sum + (end.diff(start, 'months', true) * rent);
-//     }, 0) );
-//
-//   const rent
-//     .then(leases => [leases, leases.map(l => l.leaseID)])
-//     .spread(leases, lease)
-// }
+Tenant.getBalances = function(tenant) {
+  const tenantID = tenant.id || tenant,
+        today = Moment(),
+        dayOfMonth = today.date();
+
+  const feeAdjBalances = ReadService.getFeesAndAdjustmentsForTenant(tenant);
+  const paymentBalances = ReadService.getPaymentsForTenant(tenant);
+  const leasePeriods = ReadService.getLeasePeriodsForTenant(tenant);
+  const rent = tenant.getCurrentLease().then(lse => lse.rent);
+
+  const accruedRent = leasePeriods.then(leases => {
+    return leases.reduce((sum,lse) => {
+      const lseEndDate = Moment(lse.endDate);
+      const start = Moment(lse.startDate);
+      const end = (lseEndDate.isBefore(today)) ? lseEndDate : today.endOf('month');
+      const rent = parseFloat(lse.rent);
+      return sum + (rentPeriods(start, end) * rent);
+    }, 0)
+  });
+
+  return Promise.all([ feeAdjBalances, paymentBalances, accruedRent, rent ])
+  .spread((feeAdjBalances, paymentBalances, accruedRent, rent) => {
+    accruedRent = [{incomeID: 1, total: accruedRent}];
+
+    const allBalances = feeAdjBalances.concat(paymentBalances).concat(accruedRent);
+
+    // Combine totals from fees, adjustments, payments and rent to get
+    // a final balance for each incomeID
+    const balances = allBalances.reduce((all, bal) => {
+      if (!all[bal.incomeID]) {
+        all[bal.incomeID] = {incomeID: bal.incomeID, name: '', total: 0};
+      }
+
+      all[bal.incomeID].name = all[bal.incomeID].name || bal.name;
+      all[bal.incomeID].total += bal.total;
+      return all;
+    }, {})
+
+    const totalRent = balances[1].total;
+    const currentRent = (dayOfMonth > 15) ? 0 : Math.min(rent, totalRent);
+    const previousRent = totalRent - currentRent;
+    const fees = Object.keys(balances).filter(b => b!=='1').map(key => balances[key]);
+    const totalDue = currentRent + previousRent + fees.filter(f => f.total > 0).reduce((sum, f) => sum + f.total, 0);
+
+    return {totalDue, totalRent, currentRent, previousRent, fees };
+  })
+}
 
 Tenant.getBalance = function(tenantId) {
 
