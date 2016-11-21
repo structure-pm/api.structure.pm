@@ -72,12 +72,16 @@ Read.getPaymentsForTenant = function(tenant) {
 Read.getLeasePeriodsForTenant = function(tenant) {
   const prefix = db.getPrefix();
   const tenantID = tenant.id;
+  // Note about the MTM thing below.
+  // Active Month-to-month leases will have an endDate set (often 1 month after
+  // the lease starts).  So the endDate of active MTMs is the end of the current
+  // month.  Once a MTM ends, the endDate is updated to the actual endDate
   const query = `
     SELECT
       lse.leaseID,
       lse.rent,
       CASE WHEN lse.startDate > l.addedWhen THEN lse.startDate ELSE l.addedWhen END as startDate,
-      lse.endDate
+      CASE WHEN lse.agreement = 'MTM' AND lse.active=1 THEN LAST_DAY(NOW()) ELSE lse.endDate END as endDate
     FROM
       ${prefix}_assets.lease lse
       JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
