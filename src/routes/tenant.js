@@ -5,7 +5,7 @@ export default function(config) {
   let router = Router();
   router.post('/tenant/:tenantID/payments', tenant.receivePayment);
   router.post('/tenant/:tenantID/fees', tenant.addFee);
-  router.post('/tenant/:tenantID/credits', tenant.addCredit);
+  router.post('/tenant/:tenantID/adjustments', tenant.addAdjustment);
   router.get('/tenant/:tenantID/balance', tenant.getBalance);
 
   return router;

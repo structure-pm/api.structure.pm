@@ -44,7 +44,7 @@ export function addFee(req, res, next) {
     .catch(next);
 }
 
-export function addCredit(req, res, next) {
+export function addAdjustment(req, res, next) {
   return makeLedgerAdjustment('credit', req.params.tenantID, req.body)
     .then(inc => res.json(inc))
     .catch(next);
