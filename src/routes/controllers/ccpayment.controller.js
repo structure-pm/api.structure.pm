@@ -18,13 +18,29 @@ export function makePayment(req, res, next) {
   paymentService.payRent(customer, rent, creditCardInfo)
     .then(transaction => res.json(transaction))
     .catch(next);
-  // paymentService.createCustomer(customer)
-  //   .then(customer => {
-  //     transaction.CustomerId = customer.CustomerId;
-  //     return paymentService.createSaleTransaction(transaction);
-  //   })
-  //   .then(transaction => res.json(transaction))
-  //   .catch(next);
+
+}
+
+
+export function createTransaction(req, res, next) {
+  const customer = req.body.customer;
+  const creditCardInfo = req.body.creditCardInfo;
+  const amount = (typeof req.body.amount === 'string') ? parseFloat(req.body.amount) : req.body.amount;
+
+
+  const requiredCustomerFields = ["Email", "FirstName", "LastName", "Phone", "Address"];
+  const missingCustomer = requiredCustomerFields.filter(fld => !customer.hasOwnProperty(fld));
+  if (missingCustomer.length) {
+    const err = new Error(`Missing fields [${missingCustomer.join(',')}] from customer data`);
+    err.status = 400;
+    return next(err);
+  }
+
+
+  paymentService.createTransaction(customer, amount, creditCardInfo);
+    .then(transaction => res.json(transaction))
+    .catch(next);
+
 }
 
 

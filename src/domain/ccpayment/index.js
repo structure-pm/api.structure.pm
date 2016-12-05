@@ -19,6 +19,39 @@ const logger = new (winston.Logger)({
 
 
 
+export function createTransaction(customerData, amount, ccInfo) {
+
+  return Promise.all([
+    api.addCustomer(new Customer(tenantInfo)),
+    new CreditCardInfo(ccInfo),
+    api.getCCPaymentMethodId()
+  ])
+    .then(([customer, creditCardInfo, ccPaymentMethodId]) => {
+
+      const transactionOptions = {
+        Amount: amount,
+        CreditCardInfo: creditCardInfo,
+        CustomerId: customer.CustomerId,
+        MerchantGatewayPaymentMethodId: ccPaymentMethodId,
+        TransactionTypeName: 'sale',
+      };
+      const transaction = new Transaction(transactionOptions);
+
+      return api.processTransaction(transaction)
+        .then(transaction => {
+          // Do something to log failed transactions or check process
+          logger.info(`Sale - ${customer.FirstName} ${customer.LastName} - ${transaction.Amount} - tid:${TransactionId}`)
+          return transaction;
+        })
+        .catch(err => {
+          logger.error(`[ERROR CustomerID: ${customer.CustomerId}] (${err.ErrorCode}) ${err.message}`);
+          throw(err);
+        });
+
+    })
+
+}
+
 export function payRent(tenantInfo, rent, ccInfo) {
 
   if (!isValidEmail(tenantInfo.Email)) {

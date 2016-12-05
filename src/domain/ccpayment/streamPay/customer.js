@@ -1,4 +1,4 @@
-import {validateRequiredFields} from '../utils';
+import {validateRequiredFields, isValidEmail} from '../utils';
 import Address from './address';
 
 const requiredFields = ['Email', 'FirstName', 'LastName', 'IsActive']
@@ -14,4 +14,7 @@ export default function Customer(options) {
   }
 
   validateRequiredFields(this, requiredFields, 'Customer');
+  if (!isValidEmail(this.Email)) {
+    throw new Error(`Invalid email address: ${this.Email}`);
+  }
 }
