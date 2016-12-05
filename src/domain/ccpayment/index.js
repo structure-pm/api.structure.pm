@@ -4,6 +4,7 @@ import config from '../../config';
 import creditCardType from 'credit-card-type';
 import winston from 'winston';
 import StreamPayApi, {Customer, Address, Invoice, Transaction, CreditCardInfo} from './streamPay'
+import {isValidEmail} from './utils';
 
 const api = new StreamPayApi(config.ccpayment);
 
@@ -19,6 +20,10 @@ const logger = new (winston.Logger)({
 
 
 export function payRent(tenantInfo, rent, ccInfo) {
+
+  if (!isValidEmail(tenantInfo.Email)) {
+    tenantInfo.Email = `tenantID-${tenantInfo.tenantID}`;
+  }
 
   const tenant = new Customer(tenantInfo);
   const creditCardInfo = new CreditCardInfo(ccInfo);
