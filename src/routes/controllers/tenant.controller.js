@@ -38,6 +38,16 @@ export function receivePayment(req, res, next) {
     .catch(next);
 }
 
+
+export function deletePayment(req, res, next) {
+  const {paymentId} = req.params;
+
+  return Tenant.deletePayment(paymentId)
+    .then(results => res.json(results))
+    .catch(next);
+}
+
+
 export function addFee(req, res, next) {
   return makeLedgerAdjustment('fee', req.params.tenantID, req.body)
     .then(inc => res.json(inc))

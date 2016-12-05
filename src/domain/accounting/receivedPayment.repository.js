@@ -55,9 +55,13 @@ Repo.find = function(where, options = {}) {
 }
 
 Repo.save = function(receivedPayment, options) {
-  return (receivedPayment.id)
-    ? updateReceivedPayment(receivedPayment, options)
-    : insertReceivedPayment(receivedPayment, options);
+  if (receivedPayment.id && receivedPayment.isDeleted()) {
+    return deleteReceivedPayment(receivedPayment, options);
+  } else {
+    return (receivedPayment.id)
+      ? updateReceivedPayment(receivedPayment, options)
+      : insertReceivedPayment(receivedPayment, options);
+  }
 }
 
 function updateReceivedPayment(receivedPayment, options) {
@@ -98,4 +102,18 @@ function insertReceivedPayment(receivedPayment, options) {
 
   return Promise.all([insert, insertLines])
     .spread((insert, insertLines) => Repo.get(insert.insertId, options))
+}
+
+
+function deleteReceivedPayment(receivedPayment, options) {
+  const receivedPaymentTable = `${db.getPrefix()}_income.receivedPayment`;
+  const lines = receivedPayment.getLines().filter(l => l.id);
+
+  const deletePaymentSQL = `DELETE FROM ${receivedPaymentTable} WHERE id=?`;
+
+  return Promise.all([
+    Promise.map(lines, line => IncomeRepo.destroy(line, options)),
+    db.query(deletePaymentSQL, [receivedPayment.id], options)
+  ]);
+
 }

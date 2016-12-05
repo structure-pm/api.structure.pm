@@ -56,6 +56,45 @@ Tenant.receivePayment = function(lease, paymentData) {
   })
 }
 
+Tenant.deletePayment = function(paymentId) {
+
+  const payment = PaymentRepo.get(paymentId);
+  const lease = payment.then(payment => LeaseRepo.get(payment.leaseID));
+  const tenant = lease.then(lse => TenantRepo.get(lse.tenantID));
+  const owner = lease.then(lse => OwnerRepo.get(lse.ownerID));
+
+
+  return Promise.all([payment, lease, tenant, owner])
+    .then(([payment, lease, tenant, owner]) => {
+
+      return db.beginTransaction().then(t => {
+
+        const balancesAdjusted = newPay
+          .then(payment => payment.getLines())
+          .map(iEntry => {
+            owner.adjustBalance(-1* iEntry);
+            tenant.adjustBalance(-1* iEntry);
+            return iEntry;
+          });
+
+        const balancesSaved = balancesAdjusted
+          .then(() => Promise.all([
+              OwnerRepo.save(owner, {transaction: t}),
+              TenantRepo.save(tenant, {transaction: t})
+            ]) )
+
+        payment.setDeleted(true);
+
+        return Promise.all([balancesAdjusted, balancesSaved, PayRepo.save(payment)])
+          .then(() => true)
+          .tap(() => db.commit(t) )
+          .catch(err => db.rollback(t).throw(err) )
+
+      });
+
+    })
+}
+
 
 
 Tenant.getBalances = function(tenant) {

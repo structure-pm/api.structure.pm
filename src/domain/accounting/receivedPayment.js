@@ -28,6 +28,14 @@ export default function ReceivedPayment(paymentData={}) {
 
 ReceivedPayment.Fields = FIELDS;
 
+ReceivedPayment.prototype.setDeleted = function(del) {
+  this._deleted = !!del;
+  return this;
+}
+
+ReceivedPayment.prototype.isDeleted = function() {
+  return !!this._deleted;
+}
 
 ReceivedPayment.prototype.setLines = function(lines) {
   if (!Array.isArray(lines)) lines = [lines];
