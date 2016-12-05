@@ -58,7 +58,14 @@ Tenant.receivePayment = function(lease, paymentData) {
 
 Tenant.deletePayment = function(paymentId) {
 
-  const payment = PaymentRepo.get(paymentId);
+  const payment = PaymentRepo.get(paymentId).then(pm => {
+    if (!pm) {
+      const err =  new Error(`Payment ${paymentId} not found`);
+      err.status = 404;
+      throw err;
+    }
+    return pm;
+  });
   const lease = payment.then(payment => LeaseRepo.get(payment.leaseID));
   const tenant = lease.then(lse => TenantRepo.get(lse.tenantID));
   const owner = lease.then(lse => OwnerRepo.get(lse.ownerID));
@@ -69,11 +76,10 @@ Tenant.deletePayment = function(paymentId) {
 
       return db.beginTransaction().then(t => {
 
-        const balancesAdjusted = newPay
-          .then(payment => payment.getLines())
+        const balancesAdjusted = Promise.resolve(payment.getLines())
           .map(iEntry => {
-            owner.adjustBalance(-1* iEntry);
-            tenant.adjustBalance(-1* iEntry);
+            owner.adjustBalance(iEntry, false);
+            tenant.adjustBalance(iEntry, false);
             return iEntry;
           });
 

@@ -30,8 +30,9 @@ export default function Owner(data) {
 Owner.Fields = FIELDS;
 
 
-Owner.prototype.adjustBalance = function(entry) {
+Owner.prototype.adjustBalance = function(entry, add=true) {
   if (!entry.feeAdded) {
-    this.ledgerBalance = (this.ledgerBalance || 0) + entry.amount;
+    const mult = (add) ? 1 : -1;
+    this.ledgerBalance = (this.ledgerBalance || 0) + (mult, entry.amount);
   }
 }

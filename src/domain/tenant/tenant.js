@@ -42,11 +42,11 @@ Tenant.prototype.getCurrentLease = function() {
 }
 
 
-Tenant.prototype.adjustBalance = function(entry) {
-  // TODO: Fees should be paid down first, before rent
+Tenant.prototype.adjustBalance = function(entry, add=true) {
+  const mult = (add) ? 1 : -1;
   if (entry.feeAdded) {
-    this.feeBalance = (this.feeBalance || 0) + entry.amount;
+    this.feeBalance = (this.feeBalance || 0) + (mult * entry.amount);
   } else {
-    this.rentBalance = (this.rentBalance || 0) - entry.amount;
+    this.rentBalance = (this.rentBalance || 0) - (mult * entry.amount);
   }
 }
