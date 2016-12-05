@@ -100,7 +100,9 @@ Tenant.getBalances = function(tenant) {
     const currentRent = (dayOfMonth > 15) ? 0 : Math.min(rent, totalRent);
     const previousRent = totalRent - currentRent;
     const fees = Object.keys(balances).filter(b => b!=='1').map(key => balances[key]);
-    const totalDue = currentRent + previousRent + fees.filter(f => f.total > 0).reduce((sum, f) => sum + f.total, 0);
+    const totalDue = [currentRent,previousRent].concat(fees.map(f => f.total))
+      .filter(f => f > 0)
+      .reduce((sum, f) => sum + f, 0);
 
     return {totalDue, totalRent, currentRent, previousRent, fees };
   })
