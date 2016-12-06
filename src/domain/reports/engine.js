@@ -6,6 +6,7 @@ const engine = {
   renderTemplate,
   sandboxEval,
   compile,
+  registerPartial,
 };
 
 function renderTemplate(template, context) {
@@ -14,6 +15,10 @@ function renderTemplate(template, context) {
 
 function compile(template) {
   return handlebars.compile(template);
+}
+
+function registerPartial(name, template) {
+  return handlebars.registerPartial(name, template);
 }
 
 function sandboxEval(script) {

@@ -19,7 +19,9 @@ const templateSets = {
 
 
 
-export default function GeneralListTemplate(options, dataset, format="html") {
+// export default function GeneralListTemplate(options, dataset, format="html") {
+export default function GeneralListTemplate(parameters, configuration, dataset, format="html") {
+  this.options = Object.assign({}, configuration, paramters);
   Object.assign(this, options);
   this.format = format;
   this.items = dataset.data || options.data;

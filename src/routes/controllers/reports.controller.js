@@ -21,6 +21,28 @@ import * as reportDataSvc from '../../domain/reports/reportData.service';
  * }
  **/
 
+export function runReport(req, res, next) {
+  const {name, parameters, configuration, format, data} = req.body;
+  const reportFormat = format || req.query.format || body.format || 'html';
+
+  reportSvc.runReport(name, parameters, configuration, reportFormat, data)
+    .then(output => {
+      if (reportFormat === 'html') {
+        res.send(output);
+      } else if (reportFormat === 'csv') {
+        res.attachment('report.csv');
+
+        const reportStream = new Readable();
+        reportStream.pipe(res);
+        reportStream.push(output);
+        reportStream.push(null);
+      } else {
+        throw new Error(`Unknown format type ${reportFormat}`)
+      }
+    })
+    .catch(next);
+}
+
 export function renderReport(req, res, next) {
   let body;
   if (req.body.json) {
@@ -28,9 +50,10 @@ export function renderReport(req, res, next) {
   } else {
     body = req.body;
   }
-  let dataset = body.dataset,
-      report = body.report,
-      reportFormat = req.query.format || body.format || 'html';
+
+  const {report, dataset} = body;
+  const reportFormat = req.query.format || body.format || 'html';
+  const {reportName} = report;
 
   if (!dataset) {
     const err = new Error("Structure Reporting requires a missing data definition field (`dataset`) to proceed.");
@@ -76,6 +99,12 @@ export function renderReport(req, res, next) {
     .catch(next);
 }
 
+
+export function getReportDefinitions(req,res,next) {
+  reportSvc.listRegisteredReports()
+    .then(defs => res.json(defs))
+    .catch(next);
+}
 
 export function getDataservice(req, res, next) {
   const {dataserviceName} = req.params;
