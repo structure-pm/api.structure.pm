@@ -75,3 +75,13 @@ export function renderReport(req, res, next) {
     })
     .catch(next);
 }
+
+
+export function getDataservice(req, res, next) {
+  const {dataserviceName} = req.params;
+  const options = req.query;
+
+  reportDataSvc.get(dataserviceName, options)
+    .then(results => res.json(results))
+    .catch(next);
+}
