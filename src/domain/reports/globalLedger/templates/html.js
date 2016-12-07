@@ -1,3 +1,15 @@
+import Moment from 'moment';
+import engine from '../../engine';
+
+export default {
+  render: function(data) {
+    const header = renderHeader();
+    const body = renderBody({lines: data});
+    const table = renderTable({body, header});
+
+    return table;
+  }
+}
 
 export const tableTemplate = `
 <table>
@@ -47,3 +59,13 @@ export const bodyTemplate = `
   {{>ledgerLine this}}
 {{/each}}
 `;
+
+engine.registerPartial('ledgerLine', lineTemplate);
+const renderTable = engine.compile(tableTemplate);
+const renderHeader = engine.compile(headerTemplate);
+const renderBody = engine.compile(bodyTemplate);
+
+
+engine.registerHelper('formatDate', function(dt, format) {
+  return Moment(dt).format(format);
+});
