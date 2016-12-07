@@ -4,8 +4,14 @@ import * as db from '../../../db';
 
 
 export default function gl(options) {
-  const start = Moment(options.start).format('YYYY-MM-DD');
-  const end = Moment(options.end).format('YYYY-MM-DD');
+  const {dateRange, managerID} = options;
+  const start = Moment(dateRange.startDate).format('YYYY-MM-DD');
+  const end = Moment(dateRange.endDate).format('YYYY-MM-DD');
+
+  if (!managerID || !dateRange.startDate || !dateRange.endDate) {
+    throw new Error(`Missing required fields for Global Ledger dataset`);
+  }
+
   const dbPrefix = db.getPrefix();
 
   const sql = `
@@ -38,9 +44,11 @@ export default function gl(options) {
         LEFT JOIN ${dbPrefix}_assets.deed d on d.locationID = loc.locationID
           AND il.dateStamp >= d.startDate
           AND il.dateStamp <= COALESCE(d.endDate, '${end}')
+        LEFT JOIN ${dbPrefix}_assets.owner own on own.ownerID = loc.ownerID
       WHERE
         il.dateStamp >= '${start}' AND il.dateStamp <= '${end}'
         AND (loc.locationID is NULL OR il.dateStamp >=d.startDate)
+        AND own.managedBy = '${managerID}'
 
       UNION ALL
       -- expenses
@@ -72,10 +80,13 @@ export default function gl(options) {
         LEFT JOIN ${dbPrefix}_assets.deed d on d.locationID = loc.locationID
           AND COALESCE(el.dateStamp, el.createDate) >= d.startDate
           AND COALESCE(el.dateStamp, el.createDate) <= COALESCE(d.endDate, '${end}')
+        LEFT JOIN ${dbPrefix}_assets.owner own on own.ownerID = loc.ownerID
+
       WHERE
         -- el.dateStamp IS NULL means that the bill is still pending
-        (COALESCE(el.createDate, el.dueDate) >= '${start}' AND COALESCE(el.createDate, el.dueDate) <= '2016-11-30')
+        (COALESCE(el.createDate, el.dueDate) >= '${start}' AND COALESCE(el.createDate, el.dueDate) <= '${end}')
         AND (loc.locationID IS NULL OR (COALESCE(el.dateStamp, el.createDate) >= d.startDate))
+        AND own.managedBy='${managerID}'
     ) entries
     ORDER BY entryDate DESC`;
 

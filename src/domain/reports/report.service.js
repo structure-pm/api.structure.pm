@@ -9,8 +9,7 @@ const _templates = {
   global_ledger: GlobalLedger,
 }
 
-export function runReport(reportName, userParameters, userConfiguration, reportFormat, data) {
-
+export function runReport(reportName, userParameters={}, userConfiguration={}, reportFormat='html', data=null) {
   const options = Promise.try(() => {
     const report = ReportDefs.get(reportName);
 

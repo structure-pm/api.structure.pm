@@ -1,4 +1,5 @@
 import engine from '../engine'
+import Moment from 'moment';
 import {tableTemplate, headerTemplate, lineTemplate, bodyTemplate} from './templates';
 
 engine.registerPartial('ledgerLine', lineTemplate);
@@ -7,8 +8,13 @@ const renderHeader = engine.compile(headerTemplate);
 const renderBody = engine.compile(bodyTemplate);
 
 
-function GlobalLedger(parameters, configuration, dataset, format) {
-  this.parameters = paramters;
+engine.registerHelper('formatDate', function(dt, format) {
+  return Moment(dt).format(format);
+});
+
+
+export default function GlobalLedger(parameters, configuration, dataset, format) {
+  this.parameters = parameters;
   this.configuration = configuration;
   this.dataset = dataset;
   this.format = format;

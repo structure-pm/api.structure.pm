@@ -83,12 +83,12 @@ export function partitionBy(options, prefix, sumColumn) {
 
 export default function pl(options) {
   const dbPrefix = db.getPrefix();
-  const filters = options.filter || {};
-  const missing = ['startDate', 'endDate', 'ownerID'].filter(f => !filters.hasOwnProperty(f));
+  const missing = ['dateRange', 'ownerID'].filter(f => !options.hasOwnProperty(f));
   if (missing.length) {
-    throw new Error(`ProfitLoss dataservice missing filters: [${missing.join(',')}]`);
+    throw new Error(`ProfitLoss dataservice missing parameters: [${missing.join(',')}]`);
   }
-  const {startDate, endDate, ownerID} = filters;
+  const {dateRange, ownerID} = options;
+  const {startDate, endDate} = dateRange;
   let partitions
 
   return Promise.all([

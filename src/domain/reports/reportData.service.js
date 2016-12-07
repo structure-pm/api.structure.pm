@@ -10,8 +10,10 @@ const dataServices = {
 };
 
 
+const DatasetService = {};
+export default DatasetService;
 
-export function get(dataSetname="", options) {
+DatasetService.get = function(dataSetname="", options) {
   const dsKey = dataSetname.toLowerCase();
 
   if (!dataServices[dsKey]) {
