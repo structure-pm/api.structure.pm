@@ -1,21 +1,34 @@
 import Moment from 'moment';
+import path from 'path';
+import sass from 'node-sass';
 import engine from '../../engine';
+
+
+const styleFile = path.join(__dirname, 'style.scss');
+const style = sass.renderSync({ file: styleFile }).css.toString('utf8');
 
 export default {
   render: function(data) {
     const header = renderHeader();
     const body = renderBody({lines: data});
-    const table = renderTable({body, header});
+    const table = renderTable({body, header, style});
 
     return table;
   }
 }
 
 export const tableTemplate = `
-<table>
-  {{{header}}}
-  {{{body}}}
-</table>
+<style>
+  {{{style}}}
+</style>
+<div class="report-wrapper">
+  <div class="report-content">
+    <table>
+      {{{header}}}
+      {{{body}}}
+    </table>
+  </div>
+</div>
 `
 
 export const headerTemplate = `
@@ -44,8 +57,8 @@ export const lineTemplate = `
     <td>{{locationName}}</td>
     <td>{{unitNumber}}</td>
     <td>{{formatDate entryDate 'YYYY-MM-DD'}}</td>
-    <td>{{income}}</td>
-    <td>{{expense}}</td>
+    <td>{{toMoney income}}</td>
+    <td>{{toMoney expense}}</td>
     <td>{{isReconciled}}</td>
     <td>{{payeeVendorName}}</td>
     <td>{{{glAccountName}}}</td>
@@ -64,8 +77,3 @@ engine.registerPartial('ledgerLine', lineTemplate);
 const renderTable = engine.compile(tableTemplate);
 const renderHeader = engine.compile(headerTemplate);
 const renderBody = engine.compile(bodyTemplate);
-
-
-engine.registerHelper('formatDate', function(dt, format) {
-  return Moment(dt).format(format);
-});
