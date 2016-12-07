@@ -77,7 +77,8 @@ export function partitionBy(options, queryTypeSelector) {
     .spread((partitions, columnSQL) => {
       // Partition by time period
       if (['month', 'year', 'quarter'].indexOf(partition) >=0) {
-        const {startDate, endDate} = options.filter;
+        const {dateRange} = options;
+        const {startDate, endDate} = dateRange;
         const periods = dateUtils.nBetween(partition, startDate, endDate);
 
         periods.map(period => Moment(period))
