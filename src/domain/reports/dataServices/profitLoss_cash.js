@@ -21,7 +21,8 @@ export function partitionBy(options, prefix, sumColumn) {
     .spread((partitions, columnSQL) => {
       // Partition by time period
       if (['month', 'year', 'quarter'].indexOf(partition) >=0) {
-        const {startDate, endDate} = options.filter;
+        const {dateRange} = options;
+        const {startDate, endDate} = dateRange;
         const periods = dateUtils.nBetween(partition, startDate, endDate);
         periods
         .map(period => Moment(period))
@@ -83,12 +84,12 @@ export function partitionBy(options, prefix, sumColumn) {
 
 export default function pl(options) {
   const dbPrefix = db.getPrefix();
-  const filters = options.filter || {};
-  const missing = ['startDate', 'endDate', 'ownerID'].filter(f => !filters.hasOwnProperty(f));
+  const missing = ['dateRange', 'ownerID'].filter(f => !options.hasOwnProperty(f));
   if (missing.length) {
-    throw new Error(`ProfitLoss dataservice missing filters: [${missing.join(',')}]`);
+    throw new Error(`ProfitLoss dataservice missing parameters: [${missing.join(',')}]`);
   }
-  const {startDate, endDate, ownerID} = filters;
+  const {dateRange, ownerID} = options;
+  const {startDate, endDate} = dateRange;
   let partitions
 
   return Promise.all([

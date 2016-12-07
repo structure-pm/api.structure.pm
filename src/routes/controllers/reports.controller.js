@@ -21,44 +21,17 @@ import * as reportDataSvc from '../../domain/reports/reportData.service';
  * }
  **/
 
-export function renderReport(req, res, next) {
-  let body;
-  if (req.body.json) {
-    body = JSON.parse(req.body.json);
-  } else {
-    body = req.body;
-  }
-  let dataset = body.dataset,
-      report = body.report,
-      reportFormat = req.query.format || body.format || 'html';
+export function runReport(req, res, next) {
+  // Some links (eg. links to csv version of reports) need to send data via
+  // application/x-www-form-urlencoded. In those cases, a single form field
+  // is sent with the name 'json'.  The following lines handle both the
+  // application/x-www-form-urlencoded and the application/json case
+  const body = (req.body.json) ? JSON.parse(req.body.json) : req.body;
 
-  if (!dataset) {
-    const err = new Error("Structure Reporting requires a missing data definition field (`dataset`) to proceed.");
-    err.status = 400;
-    return next(err);
-  }
+  const {name, parameters, configuration, format, data} = body;
+  const reportFormat = format || req.query.format || body.format || 'html';
 
-  if (!report) {
-    const err = new Error("Structure Reporting requires a missing report definition field (`report`) to proceed.");
-    err.status = 400;
-    return next(err);
-  }
-
-  if (!dataset.filter || !dataset.filter.ownerID) {
-    const msg = `Currently, Structure Reporting can only provide reports for a single owner at a time.
-      Please provide an 'ownerID' field in the dataset.filter object.`;
-    const err = new Error(msg);
-    err.status = 400;
-    return next(err);
-  }
-
-  dataset.filter.startDate = dataset.filter.startDate || moment().startOf('year');
-  dataset.filter.endDate = dataset.filter.endDate || moment().endOf('year');
-
-
-
-  reportDataSvc.get(dataset.name, dataset)
-    .then(results => reportSvc.render(report.name, reportFormat, report, results))
+  reportSvc.runReport(name, parameters, configuration, reportFormat, data)
     .then(output => {
       if (reportFormat === 'html') {
         res.send(output);
@@ -73,5 +46,20 @@ export function renderReport(req, res, next) {
         throw new Error(`Unknown format type ${reportFormat}`)
       }
     })
+    .catch(next);
+}
+
+export function getReportDefinitions(req,res,next) {
+  reportSvc.listRegisteredReports()
+    .then(defs => res.json(defs))
+    .catch(next);
+}
+
+export function getDataservice(req, res, next) {
+  const {dataserviceName} = req.params;
+  const options = req.query;
+
+  reportDataSvc.get(dataserviceName, options)
+    .then(results => res.json(results))
     .catch(next);
 }

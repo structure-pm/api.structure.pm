@@ -19,18 +19,20 @@ const templateSets = {
 
 
 
-export default function GeneralListTemplate(options, dataset, format="html") {
-  Object.assign(this, options);
+// export default function GeneralListTemplate(options, dataset, format="html") {
+export default function GeneralListTemplate(parameters, configuration, dataset, format="html") {
+  this.options = Object.assign({}, configuration, parameters);
+  Object.assign(this, this.options);
   this.format = format;
-  this.items = dataset.data || options.data;
+  this.items = dataset.data || this.options.data;
   this.renderReport = templateSets[format];
-  this.groupings = options.groupBy;
-  this.rootGrouping = options.root;
+  this.groupings = this.options.groupBy;
+  this.rootGrouping = this.options.root;
 
   // Create a columns definition collection
-  this.columns = dataset.partitions.map((part, idx) => new Column(part.name, part.field, idx, options.columnDetail));
+  this.columns = dataset.partitions.map((part, idx) => new Column(part.name, part.field, idx, this.options.columnDetail));
   // Compile templates related to data times
-  this.formatItemDetail = engine.compile(options.detail);
+  this.formatItemDetail = engine.compile(this.options.detail);
 
   if (!this.items) throw new Error("Missing data from dataset");
   if (!this.columns) throw new Error("Missing dataset partitions setting");
