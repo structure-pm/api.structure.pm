@@ -1,6 +1,7 @@
 import html from './html';
+import csv from './csv';
 
-const _templates = { html };
+const _templates = { html, csv };
 
 export default {
   getTemplate: function(format) {
