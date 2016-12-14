@@ -11,12 +11,11 @@ export default {
   }
 }
 
-const reportTemplate = `{{header}}\n{{body}}`
+const reportTemplate = `{{{header}}}\n{{{body}}}`
 
 const headerTemplate = [
   'entryID',
-  'ownerID',
-  'locationID',
+  'Owner Name',
   'locationName',
   'unitNumber',
   'entryDate',
@@ -24,8 +23,8 @@ const headerTemplate = [
   'expense',
   'isReconciled',
   'payeeVendorName',
-  'incomeID',
-  'expenseID',
+  // 'incomeID',
+  // 'expenseID',
   'glAccountName',
   'leaseID',
   'comment',
@@ -34,8 +33,7 @@ const headerTemplate = [
 
 const lineTemplate = [
   '{{{entryID}}}',
-  '{{{ownerID}}}',
-  '{{{locationID}}}',
+  '{{{ownerName}}}',
   '{{{locationName}}}',
   '{{{unitNumber}}}',
   '{{{formatDate entryDate "YYYY-MM-DD"}}}',
@@ -43,13 +41,13 @@ const lineTemplate = [
   '{{{toMoney expense}}}',
   '{{{isReconciled}}}',
   '{{{payeeVendorName}}}',
-  '{{{incomeID}}}',
-  '{{{expenseID}}}',
+  // '{{{incomeID}}}',
+  // '{{{expenseID}}}',
   '{{{glAccountName}}}',
   '{{{leaseID}}}',
   '{{{comment}}}',
   '{{{method}}}',
-].join(',');
+].map(line => `"${line}"`).join(',');
 
 const bodyTemplate = `{{#each this}}${lineTemplate}\n{{/each}}`;
 
