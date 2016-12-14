@@ -10,7 +10,11 @@ export default function Customer(options) {
   );
 
   if (this.Address && !(this.Address instanceof Address)) {
-    this.Address = new Address(this.Address);
+    try {
+      this.Address = new Address(this.Address);
+    } catch(e) {
+      this.Address = undefined;
+    }
   }
 
   validateRequiredFields(this, requiredFields, 'Customer');

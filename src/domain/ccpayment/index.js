@@ -22,7 +22,7 @@ const logger = new (winston.Logger)({
 export function createTransaction(customerData, amount, ccInfo) {
 
   return Promise.all([
-    api.addCustomer(new Customer(tenantInfo)),
+    api.addCustomer(new Customer(customerData)),
     new CreditCardInfo(ccInfo),
     api.getCCPaymentMethodId()
   ])

@@ -22,10 +22,18 @@ export function makePayment(req, res, next) {
 }
 
 
-export function createTransaction(req, res, next) {
+export function createTenantCCPayment(req, res, next) {
+  const PROCESSING_FEE_INCOME_ID = 67;
+
   const customer = req.body.customer;
   const creditCardInfo = req.body.creditCardInfo;
-  const amount = (typeof req.body.amount === 'string') ? parseFloat(req.body.amount) : req.body.amount;
+  const payment = req.body.payment;
+
+  if (!payment || !Array.isArray(payment) || !payment.length) {
+    const err = new Error(`Missing valid 'payment' field, which is a list of line items.`);
+    err.status = 400;
+    return next(err);
+  }
 
 
   const requiredCustomerFields = ["Email", "FirstName", "LastName", "Phone", "Address"];
@@ -36,9 +44,17 @@ export function createTransaction(req, res, next) {
     return next(err);
   }
 
+  const paymentsToProcess = payment.filter(p => p.incomeID !== PROCESSING_FEE_INCOME_ID)
+  const totalAmount = payment.reduce((sum, p) => sum + p.amount, 0);
+  const paymentAmount = paymentsToProcess.reduce((sum, p) => sum + p.amount, 0);
+  const ccProcessingFee = totalAmount - paymentAmount;
 
-  paymentService.createTransaction(customer, amount, creditCardInfo)
-    .then(transaction => res.json(transaction))
+  paymentService.createTransaction(customer, totalAmount, creditCardInfo)
+    // if the transaction was successful, create the payment using the tenant api
+    .then(transaction => {
+      console.log("transaction", transaction);
+      return res.json(transaction);
+    })
     .catch(next);
 
 }

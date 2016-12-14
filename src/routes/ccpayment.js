@@ -12,6 +12,7 @@ export default function(config) {
     });
   });
   router.post('/ccpayment', cc.makePayment);
+  router.post('/ccpayment/tenant/:tenantID', cc.createTenantCCPayment);
   router.get('/ccpayment/methods', cc.getMethods);
 
   return router;

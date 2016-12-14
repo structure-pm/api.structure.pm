@@ -146,8 +146,9 @@ Tenant.getBalances = function(tenant) {
 
   function group(accum, coll) {
     return coll.reduce((accum, item) => {
+      console.log("GROUPING", item);
       if (!accum[item.incomeID]) {
-        accum[item.incomeID] = {incomeID: item.incomeID, type: item.type, total: 0};
+        accum[item.incomeID] = {incomeID: item.incomeID, type: item.incomeType, total: 0};
       }
       accum[item.incomeID].total += item.total;
       return accum

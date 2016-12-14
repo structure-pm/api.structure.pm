@@ -14,7 +14,7 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
   const entriesSQL = `${rentSQL} UNION ALL ${recurSQL}`;
   const sql = `SELECT
       ent.incomeID,
-      inc.type as type,
+      inc.type as incomeType,
       COALESCE(SUM(ent.credit), 0) as credits,
       COALESCE(SUM(ent.debit), 0) as debits,
       COALESCE(SUM(ent.credit),0) - COALESCE(SUM(ent.debit),0) as total
@@ -26,8 +26,6 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
       ent.dateStamp <= NOW()
       AND d.ownerID = '${ownerID}'
     GROUP BY ent.incomeID, inc.type`;
-
-  console.log(sql);
 
   return db.query(sql);
 }
@@ -156,7 +154,7 @@ Read.getFeesAndAdjustmentsForTenant = function(tenant) {
     const query = `
       SELECT
         COALESCE(il.incomeID,1) as incomeID,
-        inc.type as name,
+        inc.type as incomeType,
         SUM(CASE WHEN il.feeAdded = 1 THEN il.amount ELSE -1*il.amount END) as total
       FROM
         ${prefix}_income.iLedger il
@@ -181,7 +179,7 @@ Read.getPaymentsForTenant = function(tenant) {
     const query = `
       SELECT
         COALESCE(il.incomeID,1) as incomeID,
-        inc.type as name,
+        inc.type as incomeType,
         -1* SUM(il.amount) as total -- payment will reduce the balance, hence -1
       FROM
         ${prefix}_income.iLedger il
