@@ -46,7 +46,7 @@ export default function gl(options) {
         LEFT JOIN ${dbPrefix}_assets.deed d on d.locationID = loc.locationID
           AND il.dateStamp >= d.startDate
           AND il.dateStamp <= COALESCE(d.endDate, '${end}')
-        LEFT JOIN ${dbPrefix}_assets.owner own on own.ownerID = loc.ownerID
+        LEFT JOIN ${dbPrefix}_assets.owner own on own.ownerID = COALESCE(loc.ownerID, il.accountID)
       WHERE
         il.feeAdded <> 1 AND il.adjustment <> 1
         AND il.dateStamp >= '${start}' AND il.dateStamp <= '${end}'
