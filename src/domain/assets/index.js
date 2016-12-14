@@ -3,9 +3,14 @@ import * as db from '../../db';
 import gcloud from '../../services/gcloud'
 import GFileRepo from './gcloudFile.repository';
 import DepositRepo from '../accounting/deposits.repository';
+import UnitRepo from './unit.repository';
 
 const Assets = {};
 export default Assets;
+
+Assets.getUnit = function(unitID) {
+  return UnitRepo.get(unitID);
+}
 
 Assets.saveBufferToGFile = function(gfileData, buffer, dbOptions) {
 

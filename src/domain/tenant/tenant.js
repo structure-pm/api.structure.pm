@@ -50,3 +50,7 @@ Tenant.prototype.adjustBalance = function(entry, add=true) {
     this.rentBalance = (this.rentBalance || 0) - (mult * entry.amount);
   }
 }
+
+Tenant.prototype.toJSON = function() {
+  return _pick(this, FIELDS);
+}

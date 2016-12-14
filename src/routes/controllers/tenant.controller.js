@@ -4,6 +4,12 @@ import LeaseRepo from '../../domain/tenant/lease.repository';
 import TenantRepo from '../../domain/tenant/tenant.repository';
 import Accounting from '../../domain/accounting';
 
+export function getTenantProfile(req, res, next) {
+  Tenant.getTenantProfile(req.params.tenantID)
+    .then(tenant => res.json(tenant))
+    .catch(next);
+}
+
 export function receivePayment(req, res, next) {
   const missing = ['paymentDate', 'lines'].filter(fld => !req.body[fld]);
   if (missing.length) {

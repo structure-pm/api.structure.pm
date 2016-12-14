@@ -3,6 +3,10 @@ import * as db from '../../db';
 const Unit = {};
 export default Unit;
 
+Unit.get = function(id, options={}) {
+  return Unit.findById(id, options);
+}
+
 Unit.findById = function(id, options = {}) {
   return this.find({unitID: id}, options)
     .then(units => (units && units.length) ? units[0] : null);

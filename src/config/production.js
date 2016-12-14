@@ -11,6 +11,7 @@ const config = {
     password: '5trucm3',
     database: undefined,
     debug: false,
+    acquireTimeout: 10000,
   },
   dbPrefix: 'structu',
   ccpayment: {

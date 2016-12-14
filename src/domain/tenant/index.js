@@ -1,5 +1,6 @@
 import Moment from 'moment';
 import Promise from 'bluebird';
+import Assets from '../assets';
 import LeaseRepo from './lease.repository';
 import TenantRepo from './tenant.repository';
 import OwnerRepo from '../assets/owner.repository';
@@ -17,6 +18,24 @@ const Tenant = {};
 export default Tenant;
 
 
+Tenant.getTenantProfile = function(tenantID) {
+  const tenant = TenantRepo.get(tenantID);
+  const lease = tenant.then(tenant => tenant.getCurrentLease());
+  const unit = lease.then(lse => Assets.getUnit(lse.unitID));
+
+  return Promise.all([tenant, lease, unit])
+    .then(([tenant, lease, unit]) => {
+      const unitName = (unit.unitName) ? `#${unit.unitName}` : '';
+      const address = [unit.streetNum, unit.street, unitName].filter(i=>i).join(' ');
+      const profile = Object.assign( tenant.toJSON(), {
+        address: address,
+        city: unit.city,
+        state: unit.state,
+        zip: unit.zip
+      });
+      return profile;
+    })
+}
 
 Tenant.receivePayment = function(lease, paymentData) {
 
@@ -108,49 +127,85 @@ Tenant.getBalances = function(tenant) {
         today = Moment(),
         dayOfMonth = today.date();
 
+  const currentLease = tenant.getCurrentLease();
+  const rent = currentLease.then(lse => lse.rent);
   const feeAdjBalances = ReadService.getFeesAndAdjustmentsForTenant(tenant);
   const paymentBalances = ReadService.getPaymentsForTenant(tenant);
-  const leasePeriods = ReadService.getLeasePeriodsForTenant(tenant);
-  const rent = tenant.getCurrentLease().then(lse => lse.rent);
+  const rentAndRecurring = currentLease.then(lse => ReadService.getTotalAccruedRentForTenant(tenant, lse));
+  // const leasePeriods = ReadService.getLeasePeriodsForTenant(tenant);
+  //
+  // const accruedRent = leasePeriods.then(leases => {
+  //   return leases.reduce((sum,lse) => {
+  //     const lseEndDate = Moment(lse.endDate);
+  //     const start = Moment(lse.startDate);
+  //     const end = (lse.active) ? today.endOf('month') : lseEndDate;
+  //     const rent = parseFloat(lse.rent);
+  //     return sum + (rentPeriods(start, end) * rent);
+  //   }, 0)
+  // });
 
-  const accruedRent = leasePeriods.then(leases => {
-    return leases.reduce((sum,lse) => {
-      const lseEndDate = Moment(lse.endDate);
-      const start = Moment(lse.startDate);
-      const end = (lseEndDate.isBefore(today)) ? lseEndDate : today.endOf('month');
-      const rent = parseFloat(lse.rent);
-      return sum + (rentPeriods(start, end) * rent);
-    }, 0)
-  });
-
-  return Promise.all([ feeAdjBalances, paymentBalances, accruedRent, rent ])
-  .spread((feeAdjBalances, paymentBalances, accruedRent, rent) => {
-    accruedRent = [{incomeID: 1, total: accruedRent}];
-
-    const allBalances = feeAdjBalances.concat(paymentBalances).concat(accruedRent);
-
-    // Combine totals from fees, adjustments, payments and rent to get
-    // a final balance for each incomeID
-    const balances = allBalances.reduce((all, bal) => {
-      if (!all[bal.incomeID]) {
-        all[bal.incomeID] = {incomeID: bal.incomeID, name: '', total: 0};
+  function group(accum, coll) {
+    return coll.reduce((accum, item) => {
+      if (!accum[item.incomeID]) {
+        accum[item.incomeID] = {incomeID: item.incomeID, type: item.type, total: 0};
       }
+      accum[item.incomeID].total += item.total;
+      return accum
+    }, accum);
+  }
 
-      all[bal.incomeID].name = all[bal.incomeID].name || bal.name;
-      all[bal.incomeID].total += bal.total;
-      return all;
-    }, {})
+  return Promise
+    .all([feeAdjBalances, paymentBalances, rentAndRecurring, rent])
+    .then(([feeAdjBalances, paymentBalances, rentAndRecurring, rent]) => {
+      console.log(rentAndRecurring);
+      console.log(paymentBalances);
+      let balances = {};
+      balances = group(balances, feeAdjBalances);
+      balances = group(balances, paymentBalances);
+      balances = group(balances, rentAndRecurring);
 
-    const totalRent = balances[1].total;
-    const currentRent = (dayOfMonth > 15) ? 0 : Math.min(rent, totalRent);
-    const previousRent = totalRent - currentRent;
-    const fees = Object.keys(balances).filter(b => b!=='1').map(key => balances[key]);
-    const totalDue = [currentRent,previousRent].concat(fees.map(f => f.total))
-      .filter(f => f > 0)
-      .reduce((sum, f) => sum + f, 0);
+      return [balances, rent];
+    })
+    .then(([balances, rent]) => {
+      const totalRent = balances[1].total;
+      const currentRent = (dayOfMonth > 15) ? 0 : Math.min(rent, totalRent);
+      const previousRent = totalRent - currentRent;
+      const fees = Object.keys(balances).filter(b => b!=='1').map(key => balances[key]);
+      const totalDue = [currentRent,previousRent].concat(fees.map(f => f.total))
+        .filter(f => f > 0)
+        .reduce((sum, f) => sum + f, 0);
 
-    return {totalDue, totalRent, currentRent, previousRent, fees };
-  })
+      return {totalDue, totalRent, currentRent, previousRent, fees };
+    })
+
+  // return Promise.all([ feeAdjBalances, paymentBalances, accruedRent, rent ])
+  // .spread((feeAdjBalances, paymentBalances, accruedRent, rent) => {
+  //   accruedRent = [{incomeID: 1, total: accruedRent}];
+  //
+  //   const allBalances = feeAdjBalances.concat(paymentBalances).concat(accruedRent);
+  //
+  //   // Combine totals from fees, adjustments, payments and rent to get
+  //   // a final balance for each incomeID
+  //   const balances = allBalances.reduce((all, bal) => {
+  //     if (!all[bal.incomeID]) {
+  //       all[bal.incomeID] = {incomeID: bal.incomeID, name: '', total: 0};
+  //     }
+  //
+  //     all[bal.incomeID].name = all[bal.incomeID].name || bal.name;
+  //     all[bal.incomeID].total += bal.total;
+  //     return all;
+  //   }, {})
+  //
+  //   const totalRent = balances[1].total;
+  //   const currentRent = (dayOfMonth > 15) ? 0 : Math.min(rent, totalRent);
+  //   const previousRent = totalRent - currentRent;
+  //   const fees = Object.keys(balances).filter(b => b!=='1').map(key => balances[key]);
+  //   const totalDue = [currentRent,previousRent].concat(fees.map(f => f.total))
+  //     .filter(f => f > 0)
+  //     .reduce((sum, f) => sum + f, 0);
+  //
+  //   return {totalDue, totalRent, currentRent, previousRent, fees };
+  // })
 }
 
 Tenant.getBalance = function(tenantId) {

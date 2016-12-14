@@ -11,6 +11,7 @@ const config = {
     password: '12345678',
     // database: undefined,
     debug: false,
+    acquireTimeout: 10000,
   },
   gcloud: {
     GOOGLE_PROJECT_ID: 'structure-pm',

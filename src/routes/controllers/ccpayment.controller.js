@@ -37,7 +37,7 @@ export function createTransaction(req, res, next) {
   }
 
 
-  paymentService.createTransaction(customer, amount, creditCardInfo);
+  paymentService.createTransaction(customer, amount, creditCardInfo)
     .then(transaction => res.json(transaction))
     .catch(next);
 

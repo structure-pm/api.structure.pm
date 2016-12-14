@@ -12,6 +12,7 @@ const config = {
     password: 'api_5trucM3dev?',
     database: undefined,
     debug: false,
+    acquireTimeout: 10000,
   },
   ccpayment: {
     base_uri: 'https://api.streampay.streamlinepayments.com/v2',
