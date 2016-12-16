@@ -27,7 +27,6 @@ export function createTransaction(customerData, amount, ccInfo) {
     api.getCCPaymentMethodId()
   ])
     .then(([customer, creditCardInfo, ccPaymentMethodId]) => {
-
       const transactionOptions = {
         Amount: amount,
         CreditCardInfo: creditCardInfo,
@@ -40,7 +39,7 @@ export function createTransaction(customerData, amount, ccInfo) {
       return api.processTransaction(transaction)
         .then(transaction => {
           // Do something to log failed transactions or check process
-          logger.info(`Sale - ${customer.FirstName} ${customer.LastName} - ${transaction.Amount} - tid:${TransactionId}`)
+          logger.info(`Sale - ${customer.FirstName} ${customer.LastName} - ${transaction.Amount} - tid:${transaction.TransactionId}`)
           return transaction;
         })
         .catch(err => {
