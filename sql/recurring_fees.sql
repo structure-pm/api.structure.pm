@@ -8,14 +8,14 @@ CREATE TABLE IF NOT EXISTS recurringLeaseEntries (
   name VARCHAR(50) NOT NULL,
   amount DECIMAL(10,2) NOT NULL,
   startDate DATE NOT NULL,
-  endDate DATE NOT NULL,
+  endDate DATE,
   createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 ALTER TABLE recurringLeaseEntries ADD INDEX (leaseID);
 
 ALTER TABLE structudev_income.income
-ADD COLUMN isAssignable BOOL DEFAULT 0
+ADD COLUMN isAssignable BOOL DEFAULT 0;
 
 UPDATE structudev_income.income
 SET isAssignable = true
@@ -25,7 +25,7 @@ WHERE incomeID in ( 1, 3, 7, 9, 10, 11, 12, 17, 30 )
 -- INSERT EXISTING MONTHLY FEES/CREDITS IN TO RECURRING TABLE
 INSERT INTO structudev_assets.recurringLeaseEntries
   (leaseID, incomeID, isCredit, name, amount, startDate, endDate)
-SELECT leaseID, incomeID, isCredit, name, amount, startDate, endDate FROM (
+SELECT leaseID, incomeID, isCredit, name, amount, startDate, NULL FROM (
   SELECT
     leaseID,
     1             as incomeID,
@@ -34,8 +34,7 @@ SELECT leaseID, incomeID, isCredit, name, amount, startDate, endDate FROM (
     0             as isCredit,
     'ACH Credit'  as name,
     achCred       as amount,
-    startDate,
-    endDate
+    startDate
   FROM structudev_assets.lease
   WHERE
     ach = 1 AND achCred > 0
@@ -46,8 +45,7 @@ SELECT leaseID, incomeID, isCredit, name, amount, startDate, endDate FROM (
     1           as isCredit,
     'Wireless'  as name,
     wireless    as amount,
-    startDate,
-    endDate
+    startDate
   FROM structudev_assets.lease
   WHERE
     wireless IS NOT NULL AND wireless > 0
@@ -58,8 +56,7 @@ SELECT leaseID, incomeID, isCredit, name, amount, startDate, endDate FROM (
     1           as isCredit,
     'Pet Rent'  as name,
     petRent     as amount,
-    startDate,
-    endDate
+    startDate
   FROM structudev_assets.lease
   WHERE
     petRent IS NOT NULL AND petRent > 0
@@ -70,8 +67,7 @@ SELECT leaseID, incomeID, isCredit, name, amount, startDate, endDate FROM (
     1                as isCredit,
     otherChargeDesc1 as name,
     otherCharge1     as amount,
-    startDate,
-    endDate
+    startDate
   FROM structudev_assets.lease
   WHERE
     otherCharge1 IS NOT NULL AND otherCharge1 > 0
@@ -82,8 +78,7 @@ SELECT leaseID, incomeID, isCredit, name, amount, startDate, endDate FROM (
     1                as isCredit,
     otherChargeDesc2 as name,
     otherCharge2     as amount,
-    startDate,
-    endDate
+    startDate
   FROM structudev_assets.lease
   WHERE
     otherCharge2 IS NOT NULL AND otherCharge2 > 0
