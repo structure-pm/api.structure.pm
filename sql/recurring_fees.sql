@@ -19,7 +19,7 @@ ADD COLUMN isAssignable BOOL DEFAULT 0;
 
 UPDATE structudev_income.income
 SET isAssignable = true
-WHERE incomeID in ( 1, 3, 7, 9, 10, 11, 12, 17, 30 )
+WHERE incomeID in ( 1, 3, 7, 9, 10, 11, 12, 17, 30 );
 
 
 -- INSERT EXISTING MONTHLY FEES/CREDITS IN TO RECURRING TABLE
