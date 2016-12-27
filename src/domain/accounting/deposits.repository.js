@@ -43,7 +43,7 @@ Repo.getOwnerUndeposited = function(ownerID, options={}) {
     WHERE
       il.adjustment = 0
       AND il.feeAdded = 0
-      AND il.deposited = 0
+      AND (il.deposited = 0 OR il.deposited IS NULL)
       AND il.depID IS NULL
       AND il.receivedPaymentId IS NULL
       AND own.ownerID = ${db.escape(ownerID)}

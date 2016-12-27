@@ -1,5 +1,5 @@
 
-USE structudev_income;
+USE structu_income;
 
 CREATE TABLE IF NOT EXISTS receivedPayment (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -18,11 +18,11 @@ CREATE TABLE IF NOT EXISTS receivedPayment (
   modifiedAt TIMESTAMP NOT NULL
 );
 
-ALTER TABLE iLedger
+ALTER TABLE structu_income.iLedger
 ADD COLUMN receivedPaymentId INT,
 ADD INDEX (receivedPaymentId);
 
-USE structudev_income;
+USE structu_income;
 
 ALTER TABLE income ADD COLUMN isFee BOOL;
 

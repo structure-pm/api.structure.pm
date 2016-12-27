@@ -60,17 +60,16 @@ app.use(function(err, req, res, next) {
   const status = err.status || err.statusCode || 500;
 
   let retErr = { message: err.message, ErrorCode: err.ErrorCode };
-
-
   if (process.env.NODE_ENV !== 'production') {
     retErr.stack = err.stack;
-    console.log(err.stack);
-
-    if (err.sql) {
-      console.log('------------- SQL\n', err.sql, '\n------------- SQL');
-    }
-
   }
+
+
+  console.log(err.stack);
+  if (err.sql) {
+    console.log('------------- SQL\n', err.sql, '\n------------- SQL');
+  }
+
 
   res.status(status).json(retErr)
 })
