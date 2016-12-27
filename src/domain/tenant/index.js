@@ -135,10 +135,10 @@ Tenant.getBalances = function(tenant) {
         today = Moment(),
         dayOfMonth = today.date();
 
-  const currentLease = tenant.getCurrentLease();
+  const lastLease = tenant.getLastLease();
   const feeAdjBalances = ReadService.getFeesAndAdjustmentsForTenant(tenant);
   const paymentBalances = ReadService.getPaymentsForTenant(tenant);
-  const rentAndRecurring = currentLease.then(lse => ReadService.getTotalAccruedRentForTenant(tenant, lse));
+  const rentAndRecurring = lastLease.then(lse => ReadService.getTotalAccruedRentForTenant(tenant, lse));
 
   function group(accum, coll) {
     return coll.reduce((accum, item) => {
@@ -151,18 +151,18 @@ Tenant.getBalances = function(tenant) {
   }
 
   return Promise
-    .all([feeAdjBalances, paymentBalances, rentAndRecurring, currentLease])
-    .then(([feeAdjBalances, paymentBalances, rentAndRecurring, currentLease]) => {
+    .all([feeAdjBalances, paymentBalances, rentAndRecurring, lastLease])
+    .then(([feeAdjBalances, paymentBalances, rentAndRecurring, lastLease]) => {
       let balances = {};
       balances = group(balances, feeAdjBalances);
       balances = group(balances, paymentBalances);
       balances = group(balances, rentAndRecurring);
 
-      return [balances, currentLease];
+      return [balances, lastLease];
     })
-    .then(([balances, currentLease]) => {
+    .then(([balances, lastLease]) => {
       const totalRent = balances[1].total;
-      const currentRent = (dayOfMonth > 15) ? 0 : Math.min(currentLease.rent, totalRent);
+      const currentRent = (dayOfMonth > 15) ? 0 : Math.min(lastLease.rent, totalRent);
       const previousRent = totalRent - currentRent;
       const fees = Object.keys(balances).filter(b => b!=='1').map(key => balances[key]).filter(b => b.total >0);
       const totalDue = [currentRent,previousRent].concat(fees.map(f => f.total))

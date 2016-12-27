@@ -2,6 +2,10 @@ import Promise from 'bluebird';
 import _pick from 'lodash/pick';
 import LeaseRepo from './lease.repository';
 
+function sortLeaseByStartDate(a, b) {
+  return new Date(b.startDate) - new Date(a.startDate);
+}
+
 const ID_FIELD = 'tenantID';
 const FIELDS = [
   ID_FIELD,
@@ -39,6 +43,13 @@ Tenant.prototype.getCurrentLease = function() {
   return LeaseRepo.find({tenantID: this.id, active: 1})
     .then(leases => (leases || leases.length) ? leases[0] : null)
     .tap(lease => this._currentLease = lease)
+}
+
+Tenant.prototype.getLastLease = function() {
+  if (this._currentLease) return Promise.resolve(this._currentLease);
+  return LeaseRepo.find({tenantID: this.id})
+    .then(leases => leases.sort(sortLeaseByStartDate))
+    .then(leases => (leases || leases.length) ? leases[leases.length - 1] : null);
 }
 
 
