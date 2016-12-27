@@ -41,7 +41,7 @@ export function partitionBy(options, prefix, sumColumn) {
     .spread((partitions, columnSQL) => {
       if (partition === 'location') {
         const dbPrefix = db.getPrefix();
-        const {ownerID} = options.filter;
+        const {ownerID} = options;
         const locationQuery = `SELECT
             locationID,
             COALESCE(shortHand, CONCAT_WS(' ', streetNum, street), locationID) as name

@@ -46,7 +46,7 @@ export default function gl(options) {
         LEFT JOIN ${dbPrefix}_assets.deed d on d.locationID = loc.locationID
           AND il.dateStamp >= d.startDate
           AND il.dateStamp <= COALESCE(d.endDate, '${end}')
-        LEFT JOIN ${dbPrefix}_assets.owner own on own.ownerID = loc.ownerID
+        LEFT JOIN ${dbPrefix}_assets.owner own on own.ownerID = COALESCE(loc.ownerID, il.accountID)
       WHERE
         il.feeAdded <> 1 AND il.adjustment <> 1
         AND il.dateStamp >= '${start}' AND il.dateStamp <= '${end}'
@@ -66,7 +66,9 @@ export default function gl(options) {
         NULL as income,
         el.amount as expense,
         el.reconciled as isReconciled,
-        COALESCE(c.cName, CONCAT_WS(' ', c.fName, c.lName), c.lName) as payeeVendorName,
+        CASE WHEN (v.vendorID = 1)
+          THEN mgr.name
+          ELSE COALESCE(c.cName, CONCAT_WS(' ', c.fName, c.lName), c.lName) END as payeeVendorName,
         NULL as incomeID,
         COALESCE(el.expenseID, r.expenseID, v.expenseID) as expenseID,
         mgl.name as glAccountName,
@@ -86,6 +88,7 @@ export default function gl(options) {
           AND COALESCE(el.dateStamp, el.createDate) >= d.startDate
           AND COALESCE(el.dateStamp, el.createDate) <= COALESCE(d.endDate, '${end}')
         LEFT JOIN ${dbPrefix}_assets.owner own on own.ownerID = loc.ownerID
+        LEFT JOIN ${dbPrefix}_assets.manager mgr ON mgr.managerID = own.managedBy
 
       WHERE
         -- el.dateStamp IS NULL means that the bill is still pending
