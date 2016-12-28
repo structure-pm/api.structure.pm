@@ -71,7 +71,6 @@ function getAccruedRentSQL(tenantID) {
         OR dates.day < lse.endDate
       )
   WHERE lse.tenantID = ${tenantID}`;
-
   return sql;
 }
 
@@ -101,7 +100,7 @@ function getRecurringEntriesSQL(tenantID) {
       -- Continue to charge recurring fees so long as the lease is marked "active"
       AND (
         (lse.active = 1 and dates.day <= NOW())
-        OR rle.endDate >= dates.day
+        OR (rle.endDate >= dates.day OR rle.endDate IS NULL)
       )
   WHERE
     lse.tenantID = ${tenantID}
@@ -162,11 +161,12 @@ Read.getFeesAndAdjustmentsForTenant = function(tenant) {
       FROM
         ${prefix}_income.iLedger il
         LEFT JOIN ${prefix}_income.income inc on inc.incomeID = COALESCE(il.incomeID,1)
-        JOIN ${prefix}_assets.lease lse on lse.leaseID = il.leaseID
-        JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
-        JOIN ${prefix}_assets.deed d
+        LEFT JOIN ${prefix}_assets.lease lse on lse.leaseID = il.leaseID
+        LEFT JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
+        LEFT JOIN ${prefix}_assets.deed d
           on d.locationID = u.locationID
-          AND d.startDate <= il.dateStamp AND (d.endDate >= il.dateStamp OR d.endDate IS NULL)
+          -- Artificially move the deed start date to the first of the month
+          AND d.startDate - interval (day(d.startDate)-1) day <= il.dateStamp AND (d.endDate >= il.dateStamp OR d.endDate IS NULL)
       WHERE
         (il.feeAdded = 1 OR il.adjustment = 1)
         AND il.leaseID in (${leaseIDs.join(',')})
@@ -192,9 +192,15 @@ Read.getPaymentsForTenant = function(tenant) {
       FROM
         ${prefix}_income.iLedger il
         LEFT JOIN ${prefix}_income.income inc on inc.incomeID = COALESCE(il.incomeID,1)
+        LEFT JOIN ${prefix}_assets.lease lse on lse.leaseID = il.leaseID
+        LEFT JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
+        LEFT JOIN ${prefix}_assets.deed d on d.locationID = u.locationID
       WHERE
         (il.feeAdded = 0 AND il.adjustment = 0)
-        AND leaseID in (${leaseIDs.join(',')})
+        AND il.leaseID in (${leaseIDs.join(',')})
+        -- Artificially move the deed start date to the first of the month
+        AND d.startDate - interval (day(d.startDate)-1) day <= il.dateStamp AND (d.endDate >= il.dateStamp OR d.endDate IS NULL)
+
       GROUP BY
         COALESCE(il.incomeID,1), inc.type`;
 
