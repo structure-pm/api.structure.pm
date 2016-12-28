@@ -22,7 +22,8 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
       JOIN ${prefix}_assets.unit u on u.unitID = ent.unitID
       JOIN ${prefix}_assets.deed d
         on d.locationID = u.locationID
-        AND d.startDate <= ent.dateStamp AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
+        -- Artificially move the deed start date to the first of the month
+        AND d.startDate - interval (day(d.startDate)-1) day <= ent.dateStamp AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       LEFT JOIN ${prefix}_income.income inc on inc.incomeID = ent.incomeID
     WHERE
       ent.dateStamp <= NOW()
