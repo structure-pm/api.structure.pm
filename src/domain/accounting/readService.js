@@ -20,7 +20,9 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
       COALESCE(SUM(ent.credit),0) - COALESCE(SUM(ent.debit),0) as total
     FROM (${entriesSQL}) ent
       JOIN ${prefix}_assets.unit u on u.unitID = ent.unitID
-      JOIN ${prefix}_assets.deed d on d.locationID = u.locationID
+      JOIN ${prefix}_assets.deed d
+        on d.locationID = u.locationID
+        AND d.startDate <= ent.dateStamp AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       LEFT JOIN ${prefix}_income.income inc on inc.incomeID = ent.incomeID
     WHERE
       ent.dateStamp <= NOW()
@@ -159,9 +161,14 @@ Read.getFeesAndAdjustmentsForTenant = function(tenant) {
       FROM
         ${prefix}_income.iLedger il
         LEFT JOIN ${prefix}_income.income inc on inc.incomeID = COALESCE(il.incomeID,1)
+        JOIN ${prefix}_assets.lease lse on lse.leaseID = il.leaseID
+        JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
+        JOIN ${prefix}_assets.deed d
+          on d.locationID = u.locationID
+          AND d.startDate <= il.dateStamp AND (d.endDate >= il.dateStamp OR d.endDate IS NULL)
       WHERE
         (il.feeAdded = 1 OR il.adjustment = 1)
-        AND leaseID in (${leaseIDs.join(',')})
+        AND il.leaseID in (${leaseIDs.join(',')})
       GROUP BY
         COALESCE(il.incomeID,1), inc.type`;
 
