@@ -78,7 +78,7 @@ function makeLedgerAdjustment(type, tenantID, data) {
   });
 
 
-  const lease = tenant.then(tenant => tenant.getCurrentLease()).then(lease => {
+  const lease = tenant.then(tenant => tenant.getLastLease()).then(lease => {
     if (!lease) {
       const err = new Error(`No current active lease for tenant ${tenantID}`);
       err.status = 400;
