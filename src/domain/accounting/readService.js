@@ -23,19 +23,20 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
       JOIN ${prefix}_assets.unit u on u.unitID = ent.unitID
       JOIN ${prefix}_assets.deed d
         on d.locationID = u.locationID
-        -- Even if a lease begins before the deed, only start charging
-				-- the tenant account within the deed period.  IOW, the time period
-				-- for which we charge the tenant is the intersection of the lease
-				-- period and the deed period.
-				AND d.startDate <= ent.dateStamp
+        -- Deed start dates are treated similarly to lease start dates:
+        -- If a deed starts before the 15th, charge the full amount for
+        -- that month; Otherwise do not charge anything
+				AND (
+          (DAY(d.startDate) <= 15 AND DATE_SUB(d.startDate, INTERVAL (DAY(d.startDate)-1) DAY) <= ent.dateStamp)
+          OR
+          (DAY(d.startDate) > 15 AND d.startDate <= ent.dateStamp)
+        )
 				AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       LEFT JOIN ${prefix}_income.income inc on inc.incomeID = ent.incomeID
     WHERE
       ent.dateStamp <= NOW()
     GROUP BY ent.incomeID, inc.type`;
-    // AND d.ownerID = '${ownerID}'
 
-    console.log(sql);
   return db.query(sql);
 }
 
@@ -74,11 +75,14 @@ Read.getFeesAndAdjustmentsForTenant = function(tenant) {
         JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
         JOIN ${prefix}_assets.deed d
           on d.locationID = u.locationID
-          -- Even if a lease begins before the deed, only start charging
-					-- the tenant account within the deed period.  IOW, the time period
-					-- for which we charge the tenant is the intersection of the lease
-					-- period and the deed period.
-					AND d.startDate <= ent.dateStamp
+          -- Deed start dates are treated similarly to lease start dates:
+          -- If a deed starts before the 15th, charge the full amount for
+          -- that month; Otherwise do not charge anything
+  				AND (
+            (DAY(d.startDate) <= 15 AND DATE_SUB(d.startDate, INTERVAL (DAY(d.startDate)-1) DAY) <= ent.dateStamp)
+            OR
+            (DAY(d.startDate) > 15 AND d.startDate <= ent.dateStamp)
+          )
 					AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       GROUP BY
         ent.incomeID, ent.incomeType`;
@@ -108,11 +112,14 @@ Read.getPaymentsForTenant = function(tenant) {
         JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
         JOIN ${prefix}_assets.deed d
           on d.locationID = u.locationID
-          -- Even if a lease begins before the deed, only start charging
-          -- the tenant account within the deed period.  IOW, the time period
-          -- for which we charge the tenant is the intersection of the lease
-          -- period and the deed period.
-          AND d.startDate <= ent.dateStamp
+          -- Deed start dates are treated similarly to lease start dates:
+          -- If a deed starts before the 15th, charge the full amount for
+          -- that month; Otherwise do not charge anything
+  				AND (
+            (DAY(d.startDate) <= 15 AND DATE_SUB(d.startDate, INTERVAL (DAY(d.startDate)-1) DAY) <= ent.dateStamp)
+            OR
+            (DAY(d.startDate) > 15 AND d.startDate <= ent.dateStamp)
+          )
           AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       GROUP BY
         ent.incomeID, ent.incomeType`;
