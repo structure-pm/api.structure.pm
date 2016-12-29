@@ -1,5 +1,6 @@
 import * as db from '../../db';
 import LeaseRepo from '../tenant/lease.repository';
+import ReadSql from './readServiceQueries';
 
 const Read = {};
 export default Read;
@@ -9,8 +10,8 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
   const tenantID = tenant.id;
   const ownerID = currentLease.ownerID;
   const prefix = db.getPrefix();
-  const rentSQL = getAccruedRentSQL(tenantID);
-  const recurSQL = getRecurringEntriesSQL(tenantID);
+  const rentSQL = ReadSql.accruedRentForTenant(tenantID);
+  const recurSQL = ReadSql.recurringEntriesForTenant(tenantID);
   const entriesSQL = `${rentSQL} UNION ALL ${recurSQL}`;
   const sql = `SELECT
       ent.incomeID,
@@ -22,8 +23,12 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
       JOIN ${prefix}_assets.unit u on u.unitID = ent.unitID
       JOIN ${prefix}_assets.deed d
         on d.locationID = u.locationID
-        -- Artificially move the deed start date to the first of the month
-        AND d.startDate - interval (day(d.startDate)-1) day <= ent.dateStamp AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
+        -- Even if a lease begins before the deed, only start charging
+				-- the tenant account within the deed period.  IOW, the time period
+				-- for which we charge the tenant is the intersection of the lease
+				-- period and the deed period.
+				AND d.startDate <= ent.dateStamp
+				AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       LEFT JOIN ${prefix}_income.income inc on inc.incomeID = ent.incomeID
     WHERE
       ent.dateStamp <= NOW()
@@ -31,103 +36,6 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
     GROUP BY ent.incomeID, inc.type`;
 
   return db.query(sql);
-}
-
-function getAccruedRentSQL(tenantID) {
-  const prefix = db.getPrefix();
-
-  // Monthly rent EXCLUDING the first month's rent
-  // The exclusion is accomplished by joining dates to lease on
-  // dates.day > startDate, NOT >=.  **the more you know**
-  const sql = `SELECT
-    lse.leaseID,
-    lse.startDate as dateStamp,
-    lse.rent as credit,
-    NULL as debit,
-    1 as incomeID,
-    'Rent (first month)' as comment,
-    lse.unitID
-  FROM ${prefix}_assets.lease lse
-  WHERE
-    DAY(lse.startDate) <= 15
-    AND lse.tenantID = ${tenantID}
-
-  UNION ALL
-
-  SELECT
-    lse.leaseID,
-    dates.day as dateStamp,
-    lse.rent as credit,
-    NULL as debit,
-    1 as incomeID,
-    'Rent' as comment,
-    lse.unitID
-  FROM ${prefix}_assets.lease lse
-    LEFT JOIN ${prefix}_log.dates dates
-      on dates.day > lse.startDate
-      -- Continue to charge rent so long as the lease is marked "active"
-      AND (
-        (lse.active = 1 and dates.day <= NOW())
-        OR dates.day < lse.endDate
-      )
-  WHERE lse.tenantID = ${tenantID}`;
-  return sql;
-}
-
-function getRecurringEntriesSQL(tenantID) {
-  const prefix = db.getPrefix();
-
-  const sql = `-- Monthly recurring fees and credits
-  SELECT
-    lse.leaseID,
-    dates.day as dateStamp,
-    CASE WHEN rle.isCredit THEN rle.amount ELSE NULL END as credit,
-    CASE WHEN rle.isCredit THEN NULL ELSE rle.amount END as debit,
-    rle.incomeID as incomeID,
-    rle.name as comment,
-    lse.unitID
-  FROM ${prefix}_assets.lease lse
-    LEFT JOIN ${prefix}_log.dates dates
-      on dates.day > lse.startDate
-      -- Continue to charge recurring fees so long as the lease is marked "active"
-      AND (
-        (lse.active = 1 and dates.day <= NOW())
-        OR dates.day < lse.endDate
-      )
-    LEFT JOIN ${prefix}_assets.recurringLeaseEntries rle
-      on rle.leaseID = lse.leaseID
-      AND rle.startDate <= dates.day
-      -- Continue to charge recurring fees so long as the lease is marked "active"
-      AND (
-        (lse.active = 1 and dates.day <= NOW())
-        OR (rle.endDate >= dates.day OR rle.endDate IS NULL)
-      )
-  WHERE
-    lse.tenantID = ${tenantID}
-    AND rle.name IS NOT NULL
-
-  UNION ALL
-
-  -- First month's "prorated" recurring fees and credits (see "prorated" rent)
-  SELECT
-    lse.leaseID,
-    lse.startDate as dateStamp,
-    CASE WHEN rle.isCredit THEN rle.amount ELSE NULL END as credit,
-    CASE WHEN rle.isCredit THEN NULL ELSE rle.amount END as debit,
-    rle.incomeID as incomeID,
-    rle.name as comment,
-    lse.unitID
-  FROM ${prefix}_assets.lease lse
-    LEFT JOIN ${prefix}_assets.recurringLeaseEntries rle
-      on rle.leaseID = lse.leaseID
-      AND rle.startDate <= lse.startDate
-      AND rle.endDate >= lse.startDate
-  WHERE
-    lse.tenantID = ${tenantID}
-    AND rle.name IS NOT NULL
-    AND DAY(lse.startDate) <= 15`;
-
-  return sql;
 }
 
 
@@ -153,25 +61,26 @@ Read.getFeesAndAdjustmentsForTenant = function(tenant) {
   // Fees and adjustments with a null incomeID will be shoved in to 'Rent',
   // as has been the defacto practice for some time
   return leaseIDs.then(leaseIDs => {
+    const feesAndAdjustments = ReadSql.getFeesAndAdjustmentsForLeases(leaseIDs);
     const query = `
       SELECT
-        COALESCE(il.incomeID,1) as incomeID,
-        inc.type as incomeType,
-        SUM(CASE WHEN il.feeAdded = 1 THEN il.amount ELSE -1*il.amount END) as total
+        ent.incomeID,
+        ent.incomeType,
+        SUM(CASE WHEN ent.feeAdded = 1 THEN ent.amount ELSE -1*ent.amount END) as total
       FROM
-        ${prefix}_income.iLedger il
-        LEFT JOIN ${prefix}_income.income inc on inc.incomeID = COALESCE(il.incomeID,1)
-        LEFT JOIN ${prefix}_assets.lease lse on lse.leaseID = il.leaseID
-        LEFT JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
-        LEFT JOIN ${prefix}_assets.deed d
+        (${feesAndAdjustments}) ent
+        JOIN ${prefix}_assets.lease lse on lse.leaseID = ent.leaseID
+        JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
+        JOIN ${prefix}_assets.deed d
           on d.locationID = u.locationID
-          -- Artificially move the deed start date to the first of the month
-          AND d.startDate - interval (day(d.startDate)-1) day <= il.dateStamp AND (d.endDate >= il.dateStamp OR d.endDate IS NULL)
-      WHERE
-        (il.feeAdded = 1 OR il.adjustment = 1)
-        AND il.leaseID in (${leaseIDs.join(',')})
+          -- Even if a lease begins before the deed, only start charging
+					-- the tenant account within the deed period.  IOW, the time period
+					-- for which we charge the tenant is the intersection of the lease
+					-- period and the deed period.
+					AND d.startDate <= ent.dateStamp
+					AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       GROUP BY
-        COALESCE(il.incomeID,1), inc.type`;
+        ent.incomeID, ent.incomeType`;
 
     return db.query(query);
   });
@@ -184,25 +93,27 @@ Read.getPaymentsForTenant = function(tenant) {
   // Fees and adjustments with a null incomeID will be shoved in to 'Rent',
   // as has been the defacto practice for some time
   return leaseIDs.then(leaseIDs => {
+    const payments = ReadSql.getPaymentsForLeases(leaseIDs);
     const query = `
       SELECT
-        COALESCE(il.incomeID,1) as incomeID,
-        inc.type as incomeType,
-        -1* SUM(il.amount) as total -- payment will reduce the balance, hence -1
+        ent.incomeID,
+        ent.incomeType,
+        -- payment will reduce the balance, hence -1
+        -1* SUM(ent.amount) as total
       FROM
-        ${prefix}_income.iLedger il
-        LEFT JOIN ${prefix}_income.income inc on inc.incomeID = COALESCE(il.incomeID,1)
-        LEFT JOIN ${prefix}_assets.lease lse on lse.leaseID = il.leaseID
-        LEFT JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
-        LEFT JOIN ${prefix}_assets.deed d on d.locationID = u.locationID
-      WHERE
-        (il.feeAdded = 0 AND il.adjustment = 0)
-        AND il.leaseID in (${leaseIDs.join(',')})
-        -- Artificially move the deed start date to the first of the month
-        AND d.startDate - interval (day(d.startDate)-1) day <= il.dateStamp AND (d.endDate >= il.dateStamp OR d.endDate IS NULL)
-
+        (${payments}) ent
+        JOIN ${prefix}_assets.lease lse on lse.leaseID = ent.leaseID
+        JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
+        JOIN ${prefix}_assets.deed d
+          on d.locationID = u.locationID
+          -- Even if a lease begins before the deed, only start charging
+          -- the tenant account within the deed period.  IOW, the time period
+          -- for which we charge the tenant is the intersection of the lease
+          -- period and the deed period.
+          AND d.startDate <= ent.dateStamp
+          AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       GROUP BY
-        COALESCE(il.incomeID,1), inc.type`;
+        ent.incomeID, ent.incomeType`;
 
     return db.query(query);
   });
