@@ -32,9 +32,10 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
       LEFT JOIN ${prefix}_income.income inc on inc.incomeID = ent.incomeID
     WHERE
       ent.dateStamp <= NOW()
-      AND d.ownerID = '${ownerID}'
     GROUP BY ent.incomeID, inc.type`;
+    // AND d.ownerID = '${ownerID}'
 
+    console.log(sql);
   return db.query(sql);
 }
 
@@ -82,6 +83,7 @@ Read.getFeesAndAdjustmentsForTenant = function(tenant) {
       GROUP BY
         ent.incomeID, ent.incomeType`;
 
+
     return db.query(query);
   });
 }
@@ -114,7 +116,6 @@ Read.getPaymentsForTenant = function(tenant) {
           AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       GROUP BY
         ent.incomeID, ent.incomeType`;
-
     return db.query(query);
   });
 }
