@@ -18,7 +18,9 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
   const deduplicatedSQL = `SELECT ent.*
     FROM (${leaseDateSQL}) date_lse
       JOIN (${entriesSQL}) ent
-      ON ent.dateStamp = date_lse.day AND ent.leaseID = date_lse.leaseID
+        ON YEAR(ent.dateStamp) = date_lse.year
+  			AND MONTH(ent.dateStamp) = date_lse.month
+  			AND ent.leaseID = date_lse.leaseID
     `
   const sql = `SELECT
       ent.incomeID,

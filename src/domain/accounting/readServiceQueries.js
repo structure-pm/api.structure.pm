@@ -82,10 +82,10 @@ ReadSql.tenantLeaseDatesSQL = function(tenantID) {
   const prefix = db.getPrefix();
 
 	const query = `SELECT
-			dates.day, MIN(lse.leaseID) as leaseID
+			dates.year, dates.month, dates.day, MIN(lse.leaseID) as leaseID
 		FROM ${prefix}_log.dates dates
 			JOIN ${prefix}_assets.lease lse
-				ON lse.startDate <= dates.day
+				ON (lse.startDate - INTERVAL DAY(lse.startDate)-1 DAY) <= dates.day
 				-- Continue to charge rent so long as the lease is marked 'active'
 				AND (
 					(lse.active = 1 and dates.day <= NOW())
@@ -93,7 +93,7 @@ ReadSql.tenantLeaseDatesSQL = function(tenantID) {
 				)
 		WHERE
 			lse.tenantID = ${tenantID}
-		GROUP BY dates.day
+		GROUP BY dates.year, dates.month, dates.day
 		ORDER BY dates.day`;
 
 	return query;
