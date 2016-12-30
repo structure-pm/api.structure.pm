@@ -78,6 +78,27 @@ ReadSql.accruedRentForTenant = function(tenantID) {
   return sql;
 }
 
+ReadSql.tenantLeaseDatesSQL = function(tenantID) {
+  const prefix = db.getPrefix();
+
+	const query = `SELECT
+			dates.day, MIN(lse.leaseID) as leaseID
+		FROM ${prefix}_log.dates dates
+			JOIN ${prefix}_assets.lease lse
+				ON lse.startDate <= dates.day
+				-- Continue to charge rent so long as the lease is marked 'active'
+				AND (
+					(lse.active = 1 and dates.day <= NOW())
+					OR lse.endDate >= dates.day
+				)
+		WHERE
+			lse.tenantID = ${tenantID}
+		GROUP BY dates.day
+		ORDER BY dates.day`;
+
+	return query;
+}
+
 ReadSql.recurringEntriesForTenant = function(tenantID) {
   const prefix = db.getPrefix();
 

@@ -13,13 +13,20 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
   const rentSQL = ReadSql.accruedRentForTenant(tenantID);
   const recurSQL = ReadSql.recurringEntriesForTenant(tenantID);
   const entriesSQL = `${rentSQL} UNION ALL ${recurSQL}`;
+  const leaseDateSQL = ReadSql.tenantLeaseDatesSQL(tenantID);
+
+  const deduplicatedSQL = `SELECT ent.*
+    FROM (${leaseDateSQL}) date_lse
+      JOIN (${entriesSQL}) ent
+      ON ent.dateStamp = date_lse.day AND ent.leaseID = date_lse.leaseID
+    `
   const sql = `SELECT
       ent.incomeID,
       inc.type as incomeType,
       COALESCE(SUM(ent.credit), 0) as credits,
       COALESCE(SUM(ent.debit), 0) as debits,
       COALESCE(SUM(ent.credit),0) - COALESCE(SUM(ent.debit),0) as total
-    FROM (${entriesSQL}) ent
+    FROM (${deduplicatedSQL}) ent
       JOIN ${prefix}_assets.unit u on u.unitID = ent.unitID
       JOIN ${prefix}_assets.deed d
         on d.locationID = u.locationID
