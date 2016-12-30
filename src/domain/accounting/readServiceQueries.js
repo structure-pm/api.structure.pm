@@ -91,8 +91,17 @@ ReadSql.tenantLeaseDatesSQL = function(tenantID) {
 					(lse.active = 1 and dates.day <= NOW())
 					OR lse.endDate >= dates.day
 				)
+      LEFT JOIN (
+					SELECT leaseID, startDate, YEAR(startDate) as year, MONTH(startDate) as month
+          FROM ${prefix}_assets.lease WHERE tenantID=${tenantID}
+				) startDates on startDates.year = dates.year and startDates.month = dates.month
 		WHERE
 			lse.tenantID = ${tenantID}
+      AND (
+		    startDates.leaseID is NULL
+		    OR (DAY(startDates.startDate) > 15 AND lse.leaseID != startDates.leaseID)
+		    OR (DAY(startDates.startDate) <= 15 AND lse.leaseID = startDates.leaseID)
+		  )
 		GROUP BY dates.year, dates.month, dates.day
 		ORDER BY dates.day`;
 
