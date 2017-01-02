@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS structudev_imports.imported_account_asset (
   assetType VARCHAR(50),
   assetID VARCHAR(255),
   createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  modifiedAt TIMESTAMP NOT NULL
+  modifiedAt TIMESTAMP NOT NULL,
+  deleted TINYINT NOT NULL DEFAULT 0
 );
 
 

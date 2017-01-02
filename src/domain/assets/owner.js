@@ -25,6 +25,7 @@ export default function Owner(data) {
 
   Object.assign(this, data);
   this.id = data[ID_FIELD];
+  this.ownerName = this.nickname || this.lName;
 }
 
 Owner.Fields = FIELDS;
