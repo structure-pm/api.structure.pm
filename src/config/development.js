@@ -5,7 +5,7 @@ const config = {
   host: 'api-dev.structure.pm',
   dbPrefix: 'structudev',
   db: {
-    connectionLimit: 100,
+    connectionLimit: 15,
     host: 'localhost',
     port: 3306,
     user: 'api_structudev',

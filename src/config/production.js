@@ -4,7 +4,7 @@ const config = {
   port: 8080,
   host: 'api.structure.pm',
   db: {
-    connectionLimit: 100,
+    connectionLimit: 15,
     host: 'localhost',
     port: 3306,
     user: 'structu_atadmin',
