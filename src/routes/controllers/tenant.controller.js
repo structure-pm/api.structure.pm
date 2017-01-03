@@ -28,7 +28,7 @@ export function receivePayment(req, res, next) {
   const lease = (req.query.leaseID)
     ? LeaseRepo.get(req.query.leaseID)
     : TenantRepo.get(req.params.tenantID)
-        .then(tenant => tenant.getCurrentLease());
+        .then(tenant => tenant.getLastLease());
 
   return lease
     .then(lease => {
