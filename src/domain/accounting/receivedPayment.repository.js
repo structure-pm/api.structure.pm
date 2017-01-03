@@ -55,7 +55,7 @@ Repo.find = function(where, options = {}) {
 }
 
 Repo.save = function(receivedPayment, options) {
-  if (!receivedPayment.getLines().length) {
+  if (!receivedPayment.items) {
     return Promise.reject(new Error('Cannot save a receivedPayment with 0 payment lines'));
   }
 
