@@ -17,6 +17,10 @@ export default function Customer(options) {
     }
   }
 
+  if (!this.LastName) {
+    this.LastName = this.FirstName;
+  }
+
   validateRequiredFields(this, requiredFields, 'Customer');
   if (!isValidEmail(this.Email)) {
     throw new Error(`Invalid email address: ${this.Email}`);
