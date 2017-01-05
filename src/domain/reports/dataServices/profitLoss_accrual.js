@@ -100,7 +100,7 @@ export function partitionBy(options, queryTypeSelector) {
     .spread((partitions, columnSQL) => {
       if (partition === 'location') {
         const dbPrefix = db.getPrefix();
-        const {ownerID, startDate, endDate} = options.filter;
+        const {ownerID, startDate, endDate} = options;
         const locationQuery = `SELECT
             locationID,
             COALESCE(shortHand, CONCAT_WS(' ', streetNum, street), locationID) as name
