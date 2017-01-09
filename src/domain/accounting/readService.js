@@ -30,21 +30,36 @@ Read.getTotalAccruedRentForTenant = function(tenant, currentLease) {
       COALESCE(SUM(ent.credit),0) - COALESCE(SUM(ent.debit),0) as total
     FROM (${deduplicatedSQL}) ent
       JOIN ${prefix}_assets.unit u on u.unitID = ent.unitID
+      -- This subquery is used to select a single deed when two deed overlap
+			-- in a month.  Event if they don't have overlapping days, if one ends
+			-- and another begins before the 15th of the month, rent will be double-
+			-- counted as a result of treating the start of deeds like the start
+			-- of leases
+			LEFT JOIN (SELECT deedID, locationID, startDate, endDate FROM ${prefix}_assets.deed) currentDeed
+				ON
+					currentDeed.locationID = u.locationID
+					AND currentDeed.startDate <= ent.dateStamp
+					AND currentDeed.endDate >= ent.dateStamp
       JOIN ${prefix}_assets.deed d
         on d.locationID = u.locationID
         -- Deed start dates are treated similarly to lease start dates:
         -- If a deed starts before the 15th, charge the full amount for
         -- that month; Otherwise do not charge anything
 				AND (
-          (DAY(d.startDate) <= 15 AND DATE_SUB(d.startDate, INTERVAL (DAY(d.startDate)-1) DAY) <= ent.dateStamp)
+          currentDeed.deedID IS NOT NULL AND currentDeed.deedID = d.deedID
           OR
-          (DAY(d.startDate) > 15 AND d.startDate <= ent.dateStamp)
+          currentDeed.deedID IS NULL AND (
+            (DAY(d.startDate) <= 15 AND DATE_SUB(d.startDate, INTERVAL (DAY(d.startDate)-1) DAY) <= ent.dateStamp)
+            OR
+            (DAY(d.startDate) > 15 AND d.startDate <= ent.dateStamp)
+          )
         )
 				AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       LEFT JOIN ${prefix}_income.income inc on inc.incomeID = ent.incomeID
     WHERE
       ent.dateStamp <= NOW()
     GROUP BY ent.incomeID, inc.type`;
+    // console.log(sql);
 
   return db.query(sql);
 }
@@ -82,21 +97,35 @@ Read.getFeesAndAdjustmentsForTenant = function(tenant) {
         (${feesAndAdjustments}) ent
         JOIN ${prefix}_assets.lease lse on lse.leaseID = ent.leaseID
         JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
+        -- This subquery is used to select a single deed when two deed overlap
+  			-- in a month.  Event if they don't have overlapping days, if one ends
+  			-- and another begins before the 15th of the month, rent will be double-
+  			-- counted as a result of treating the start of deeds like the start
+  			-- of leases
+  			LEFT JOIN (SELECT deedID, locationID, startDate, endDate FROM ${prefix}_assets.deed) currentDeed
+  				ON
+  					currentDeed.locationID = u.locationID
+  					AND currentDeed.startDate <= ent.dateStamp
+  					AND currentDeed.endDate >= ent.dateStamp
         JOIN ${prefix}_assets.deed d
           on d.locationID = u.locationID
           -- Deed start dates are treated similarly to lease start dates:
           -- If a deed starts before the 15th, charge the full amount for
           -- that month; Otherwise do not charge anything
   				AND (
-            (DAY(d.startDate) <= 15 AND DATE_SUB(d.startDate, INTERVAL (DAY(d.startDate)-1) DAY) <= ent.dateStamp)
+            currentDeed.deedID IS NOT NULL AND currentDeed.deedID = d.deedID
             OR
-            (DAY(d.startDate) > 15 AND d.startDate <= ent.dateStamp)
+            currentDeed.deedID IS NULL AND (
+              (DAY(d.startDate) <= 15 AND DATE_SUB(d.startDate, INTERVAL (DAY(d.startDate)-1) DAY) <= ent.dateStamp)
+              OR
+              (DAY(d.startDate) > 15 AND d.startDate <= ent.dateStamp)
+            )
           )
-					AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
+  				AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       GROUP BY
         ent.incomeID, ent.incomeType`;
 
-
+        // console.log(query);
     return db.query(query);
   });
 }
@@ -119,19 +148,36 @@ Read.getPaymentsForTenant = function(tenant) {
         (${payments}) ent
         JOIN ${prefix}_assets.lease lse on lse.leaseID = ent.leaseID
         JOIN ${prefix}_assets.unit u on u.unitID = lse.unitID
+        -- This subquery is used to select a single deed when two deed overlap
+  			-- in a month.  Event if they don't have overlapping days, if one ends
+  			-- and another begins before the 15th of the month, rent will be double-
+  			-- counted as a result of treating the start of deeds like the start
+  			-- of leases
+  			LEFT JOIN (SELECT deedID, locationID, startDate, endDate FROM ${prefix}_assets.deed) currentDeed
+  				ON
+  					currentDeed.locationID = u.locationID
+  					AND currentDeed.startDate <= ent.dateStamp
+  					AND currentDeed.endDate >= ent.dateStamp
         JOIN ${prefix}_assets.deed d
           on d.locationID = u.locationID
           -- Deed start dates are treated similarly to lease start dates:
           -- If a deed starts before the 15th, charge the full amount for
           -- that month; Otherwise do not charge anything
   				AND (
-            (DAY(d.startDate) <= 15 AND DATE_SUB(d.startDate, INTERVAL (DAY(d.startDate)-1) DAY) <= ent.dateStamp)
+            currentDeed.deedID IS NOT NULL AND currentDeed.deedID = d.deedID
             OR
-            (DAY(d.startDate) > 15 AND d.startDate <= ent.dateStamp)
+            currentDeed.deedID IS NULL AND (
+              (DAY(d.startDate) <= 15 AND DATE_SUB(d.startDate, INTERVAL (DAY(d.startDate)-1) DAY) <= ent.dateStamp)
+              OR
+              (DAY(d.startDate) > 15 AND d.startDate <= ent.dateStamp)
+            )
           )
-          AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
+  				AND (d.endDate >= ent.dateStamp OR d.endDate IS NULL)
       GROUP BY
         ent.incomeID, ent.incomeType`;
+
+    // console.log(query);
+
     return db.query(query);
   });
 }
