@@ -37,6 +37,9 @@ export default function Tenant(data) {
 
 Tenant.Fields = FIELDS;
 
+function logLeases(lses) {
+  console.log("lses", lses.map(lse => [lse.leaseID, lse.startDate]));
+}
 
 Tenant.prototype.getCurrentLease = function() {
   if (this._currentLease) return Promise.resolve(this._currentLease);
@@ -49,7 +52,7 @@ Tenant.prototype.getLastLease = function() {
   if (this._currentLease) return Promise.resolve(this._currentLease);
   return LeaseRepo.find({tenantID: this.id})
     .then(leases => leases.sort(sortLeaseByStartDate))
-    .then(leases => (leases || leases.length) ? leases[leases.length - 1] : null);
+    .then(leases => (leases || leases.length) ? leases[0] : null);
 }
 
 
