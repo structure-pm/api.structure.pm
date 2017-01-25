@@ -124,7 +124,7 @@ export default function pl(options) {
         COALESCE(il.accountID, loc.ownerID) = '${ownerID}'
         AND il.dateStamp BETWEEN '${startDate}' AND '${endDate}'
         AND (loc.locationID is NULL OR il.dateStamp >=d.startDate)
-        AND il.incomeID IS NOT NULL and il.feeAdded != 1
+        AND il.incomeID IS NOT NULL and il.feeAdded != 1 AND il.adjustment != 1
         and mgl.sIncome = 1
       GROUP BY
         inc.type, mgl.acctGL, mgl.type`;
