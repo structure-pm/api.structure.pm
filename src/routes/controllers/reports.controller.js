@@ -30,9 +30,9 @@ export function runReport(req, res, next) {
 
   const {name, parameters, configuration, format, data} = body;
   const reportFormat = format || req.query.format || body.format || 'html';
-
   reportSvc.runReport(name, parameters, configuration, reportFormat, data)
     .then(output => {
+      console.log("FORMAT", reportFormat, format);
       if (reportFormat === 'html') {
         res.send(output);
       } else if (reportFormat === 'csv') {

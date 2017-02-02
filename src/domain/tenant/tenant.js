@@ -49,7 +49,6 @@ Tenant.prototype.getCurrentLease = function() {
 }
 
 Tenant.prototype.getLastLease = function() {
-  if (this._currentLease) return Promise.resolve(this._currentLease);
   return LeaseRepo.find({tenantID: this.id})
     .then(leases => leases.sort(sortLeaseByStartDate))
     .then(leases => (leases || leases.length) ? leases[0] : null);

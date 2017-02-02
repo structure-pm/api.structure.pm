@@ -70,18 +70,45 @@ const profitLossCashDef = {
   display: 'Profit/Loss (cash basis)',
   template: 'general_list',
   dataset: {name: 'profitloss_cash'},
-  parameters: {
-    reportFor: 'string',
-    dateRange: {
-      startDate: 'date',
-      endDate: 'date',
-      rangeName: 'string',
-    },
-    partition: 'string',
-    ownerID: 'string',
-  },
   defaultConfiguration: defaultConfig,
-  defaultParameters: {}
+  parametersDef: {
+    type: "object",
+    properties: {
+      dateRange: {
+        type      : "object",
+        required  : ["startDate", "endDate"],
+        ui        : {field: "dateRange"},
+        properties: {
+          name     : {type: "string"},
+          startDate: {type: "string"},
+          endDate  : {type: "string"}
+        }
+      },
+      partition: {
+        type: "string",
+        title: "Group Columns by",
+        enum: ['', 'month', 'quarter', 'year', 'location'],
+        enumNames: ['- None -', 'Month', 'Quarter', 'Year', 'Location'],
+      },
+      ownerID: {
+        type: "string",
+        title: "OwnerID",
+        ui: {
+          defaultToGlobal: 'ownerID',
+          hideOnDefault: true,
+        }
+      },
+      reportFor: {
+        type: "string",
+        title: "Report For",
+        ui: {
+          defaultToGlobal: 'reportFor',
+          hideOnDefault: true,
+        }
+      },
+    }
+  },
+  outputs: ['csv'],
 }
 
 export default profitLossCashDef;

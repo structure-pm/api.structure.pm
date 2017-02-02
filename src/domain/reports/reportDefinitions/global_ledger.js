@@ -3,16 +3,30 @@ const GlobalLedgerDef = {
   display: 'Global Ledger',
   template: 'global_ledger',
   dataset: {name: 'global_ledger'},
-  parameters: {
-    dateRange: {
-      startDate: 'date',
-      endDate: 'date',
-      rangeName: 'string',
-    },
-    managerID: 'string',
+  parametersDef: {
+    type: "object",
+    properties: {
+      dateRange: {
+        type      : "object",
+        required  : ["startDate", "endDate"],
+        ui        : {field: "dateRange"},
+        properties: {
+          name     : {type: "string"},
+          startDate: {type: "string"},
+          endDate  : {type: "string"}
+        }
+      },
+      managerID: {
+        type: "string",
+        title: "managerID",
+        ui: {
+          defaultToGlobal: 'managerID',
+          hideOnDefault: true,
+        }
+      },
+    }
   },
-  defaultConfiguration: {},
-  defaultParameters: {}
+  outputs: ['csv'],
 }
 
 export default GlobalLedgerDef;
