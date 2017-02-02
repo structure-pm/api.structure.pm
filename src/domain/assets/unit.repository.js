@@ -14,6 +14,9 @@ Unit.findById = function(id, options = {}) {
 Unit.getById = Unit.findById;
 
 Unit.find = function(where={}, options={}) {
+  options = Object.assign({}, {
+    includeDNM: true
+  }, options);
   const unitTable = `${db.getPrefix()}_assets.unit`;
   const locationTable = `${db.getPrefix()}_assets.location`;
   const ownerTable = `${db.getPrefix()}_assets.owner`;
