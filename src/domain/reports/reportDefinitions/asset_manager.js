@@ -1,3 +1,6 @@
+import * as db from '../../../db';
+import moment from 'moment';
+
 const AssetManagerReportDef = {
   name: 'asset_manager',
   display: 'Asset Manager Report',
@@ -22,6 +25,26 @@ const AssetManagerReportDef = {
     }
   },
   outputs: ['csv'],
+  onInit: (def) => {
+    const dbPrefix = db.getPrefix();
+    const sql = `SELECT
+        ownerID, COALESCE(nickname, lName, ownerID) as name
+      FROM
+        ${dbPrefix}_assets.owner
+      WHERE
+        managedBy = 'alltrade'
+        AND active=1
+        AND nickname NOT LIKE '%DNM%'
+      ORDER BY
+        COALESCE(nickname, lName, ownerID) ASC`;
+
+    return db.query(sql).then(data => {
+      def.parametersDef.properties.ownerIDs.items.enum = data.map(d => d.ownerID);
+      def.parametersDef.properties.ownerIDs.items.enumNames = data.map(d => d.name);
+      def.parametersDef.properties.reportDate.default = moment().format('YYYY-MM-DD');
+      return def;
+    })
+  }
 }
 
 export default AssetManagerReportDef;

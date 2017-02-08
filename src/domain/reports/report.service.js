@@ -49,9 +49,13 @@ export function render(reportName, reportFormat, options, dataSet) {
 }
 
 
-export function listRegisteredReports() {
+export function listRegisteredReports(reportIds) {
   return Promise.try(() => {
     return ReportDefs.list();
+  })
+  .then(reports => {
+    if (!reportIds || reportIds.length === 0) return reports;
+    return reports.filter(r => reportIds.includes(r.name));
   })
 }
 

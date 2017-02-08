@@ -50,7 +50,11 @@ export function runReport(req, res, next) {
 }
 
 export function getReportDefinitions(req,res,next) {
-  reportSvc.listRegisteredReports()
+  let reportIds = [];
+  if (req.query && req.query.reportIds) {
+    reportIds = req.query.reportIds.split(/\s?,\s?/)
+  }
+  reportSvc.listRegisteredReports(reportIds)
     .then(defs => res.json(defs))
     .catch(next);
 }

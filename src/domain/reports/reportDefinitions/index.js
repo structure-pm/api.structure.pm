@@ -20,5 +20,8 @@ ReportDefs.get = function(name) {
 };
 
 ReportDefs.list = function() {
-  return Object.keys(_reportDefs).map(key => _reportDefs[key]);
+  return Promise.all(Object.keys(_reportDefs).map(key =>{
+    const def = _reportDefs[key];
+    return (def.onInit) ? def.onInit(def) : def;
+  }));
 }
