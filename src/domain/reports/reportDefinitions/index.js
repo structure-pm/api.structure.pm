@@ -1,11 +1,13 @@
 import ProfitLossCashDef from './profitloss_cash';
 import ProfitLossAccrualDef from './profitloss_accrual';
 import GlobalLedgerDef from './global_ledger';
+import AssetManagerReportDef from './asset_manager';
 
 const _reportDefs = {
   [ProfitLossCashDef.name]: ProfitLossCashDef,
   [ProfitLossAccrualDef.name]: ProfitLossAccrualDef,
   [GlobalLedgerDef.name]: GlobalLedgerDef,
+  [AssetManagerReportDef.name]: AssetManagerReportDef,
 };
 
 const ReportDefs = {}

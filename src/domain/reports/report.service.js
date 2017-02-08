@@ -1,12 +1,14 @@
 import Promise from 'bluebird';
 import GeneralListTemplate from './generalListTemplate';
 import GlobalLedger from './globalLedger';
+import AssetManager from './assetManager';
 import ReportDefs from './reportDefinitions';
 import Datasets from './reportData.service';
 
 const _templates = {
   general_list: GeneralListTemplate,
   global_ledger: GlobalLedger,
+  asset_manager: AssetManager,
 }
 
 export function runReport(reportName, userParameters={}, userConfiguration={}, reportFormat='html', data=null) {
