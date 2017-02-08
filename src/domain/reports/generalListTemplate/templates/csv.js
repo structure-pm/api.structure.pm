@@ -8,7 +8,6 @@ export default function render(lines, report) {
   const header = reportHeader(report);
   const footer = reportFooter(report);
 
-  console.log(lines.map(l => l.maxLevel));
   return renderReport({ header, footer, lines });
 
 }

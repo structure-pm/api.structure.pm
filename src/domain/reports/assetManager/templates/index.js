@@ -1,9 +1,9 @@
 import engine from '../../engine';
 import helpers from './helpers';
 import html from './html';
-// import csv from './csv';
+import csv from './csv';
 
-const _templates = { html };
+const _templates = { html, csv };
 
 // register all helpers
 helpers(engine);
