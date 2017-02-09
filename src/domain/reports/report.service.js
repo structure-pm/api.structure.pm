@@ -55,7 +55,7 @@ export function listRegisteredReports(reportIds) {
   })
   .then(reports => {
     if (!reportIds || reportIds.length === 0) return reports;
-    return reports.filter(r => reportIds.includes(r.name));
+    return reports.filter(r => reportIds.indexOf(r.name) !== -1);
   })
 }
 
