@@ -1,6 +1,4 @@
 
-
-
 const defaultConfig = {
   reportTitle: "Profit Loss",
   basis: "accrual",
@@ -67,12 +65,12 @@ const defaultConfig = {
   ]
 }
 
-
 const profitLossAccrualDef = {
   name: 'profitloss_accrual',
   display: 'Profit/Loss (accrual basis)',
   template: 'general_list',
   dataset: {name: 'profitloss_accrual'},
+  defaultConfiguration: defaultConfig,
   parametersDef: {
     type: "object",
     properties: {
