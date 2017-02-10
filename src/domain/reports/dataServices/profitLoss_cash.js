@@ -119,9 +119,8 @@ export default function pl(options) {
         LEFT JOIN ${dbPrefix}_assets.location loc on loc.locationID = u.locationID
         LEFT JOIN ${dbPrefix}_assets.deed d on d.locationID = loc.locationID
           and il.dateStamp BETWEEN d.startDate AND COALESCE(d.endDate, '${endDate}')
-          and d.ownerID = COALESCE(il.accountID, loc.ownerID)
       WHERE
-        COALESCE(il.accountID, loc.ownerID) = '${ownerID}'
+        COALESCE(d.ownerID, il.accountID, loc.ownerID) = '${ownerID}'
         AND il.dateStamp BETWEEN '${startDate}' AND '${endDate}'
         AND (loc.locationID is NULL OR il.dateStamp >=d.startDate)
         AND il.incomeID IS NOT NULL and il.feeAdded != 1 AND il.adjustment != 1
@@ -152,7 +151,7 @@ export default function pl(options) {
         LEFT JOIN ${dbPrefix}_expenses.vendor v on v.vendorID=COALESCE(el.vendorID, r.vendorID)
         LEFT JOIN ${dbPrefix}_assets.deed d on d.locationID = loc.locationID
           and el.dateStamp BETWEEN d.startDate AND COALESCE(d.endDate, '${endDate}')
-          and d.ownerID = COALESCE(el.ownerID, r.ownerID)
+          and d.ownerID = '${ownerID}'
         LEFT JOIN ${dbPrefix}_expenses.expense exp on COALESCE(el.expenseID, r.expenseID, v.expenseID) = exp.expenseID
         LEFT JOIN ${dbPrefix}_log.mapGL mgl on mgl.mapID = exp.mapID
       WHERE
@@ -174,6 +173,8 @@ export default function pl(options) {
       ) as entries
       ORDER BY
         accountCode`;
+
+      // console.log(incomeQuery);
 
       return db.query(fullQuery)
         .then(data => ({
