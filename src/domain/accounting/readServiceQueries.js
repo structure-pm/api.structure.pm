@@ -131,11 +131,7 @@ ReadSql.recurringEntriesForTenant = function(tenantID) {
     LEFT JOIN ${prefix}_assets.recurringLeaseEntries rle
       on rle.leaseID = lse.leaseID
       AND rle.startDate <= dates.day
-      -- Continue to charge recurring fees so long as the lease is marked "active"
-      AND (
-        (lse.active = 1 and dates.day <= NOW())
-        OR (rle.endDate >= dates.day OR rle.endDate IS NULL)
-      )
+      AND (rle.endDate >= dates.day OR rle.endDate IS NULL)
   WHERE
     lse.tenantID = ${tenantID}
     AND rle.name IS NOT NULL
