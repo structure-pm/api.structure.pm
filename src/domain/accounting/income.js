@@ -39,10 +39,13 @@ Income.prototype.markDeposited = function(depID, depositDate) {
   this.deposited = 1;
   this.depID = depID;
   this.depDate = formatDateForDb(depositDate);
+  this._dirty = true;
 }
 
 Income.prototype.revertDeposit = function() {
   this.deposited = 0;
   this.depID = null;
   this.depDate = null;
+  this._dirty = true;
+
 }

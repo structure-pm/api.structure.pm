@@ -116,4 +116,5 @@ ReceivedPayment.prototype.revertDeposit = function() {
     line.revertDeposit();
     line._dirty = true;
   })
+
 }

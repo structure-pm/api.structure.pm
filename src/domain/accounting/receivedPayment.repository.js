@@ -34,6 +34,7 @@ Repo.find = function(where, options = {}) {
     .then(() => {
       where = _pick(where || {}, ReceivedPayment.Fields);
       const receivedPaymentTable = `${db.getPrefix()}_income.receivedPayment`;
+      const iLedgerTable = `${db.getPrefix()}_income.iLedger`;
 
       if (!Object.keys(where).length) {
         throw new Error("No filters sent to query");
@@ -50,7 +51,15 @@ Repo.find = function(where, options = {}) {
         WHERE ${whereClause}`;
 
       return db.query(selectSQL, options)
-        .map(row => new ReceivedPayment(row));
+        .map(row => {
+          const linesQuery = `SELECT *
+            FROM ${iLedgerTable}
+            WHERE receivedPaymentId = ${row.id}`;
+
+          return db.query(linesQuery, options)
+            .then(lines => Object.assign(row, {lines}))
+            .then(paymentData => new ReceivedPayment(paymentData));
+        });
     })
 }
 
