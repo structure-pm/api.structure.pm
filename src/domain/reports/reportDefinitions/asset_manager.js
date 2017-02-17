@@ -20,7 +20,9 @@ const AssetManagerReportDef = {
           type: "string",
           enum: ["poi", "glenmary", "kinghenry"],
         },
-        uniqueItems: true
+        uniqueItems: true,
+        ui: {widget: 'multiselect'},
+        
       },
     }
   },

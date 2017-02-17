@@ -1,11 +1,26 @@
 // domain/reports/assetManager/templates/columns.js
 
-const toPercent = p => p.toLocaleString('en-us', {
-  style: 'percent', maximumSignificantDigits: 3
-});
-const toDollars = p => p.toLocaleString("en-GB", {
-  style: "currency", currency: "USD", minimumFractionDigits: 2
-});
+function toPercent(p=0) {
+  return (Number(p||0)*100).toFixed(1) + "%"
+}
+
+function toDollars(p) {
+  let [integer, decimal] = Number(p || 0).toFixed(2).split('.');
+
+  integer = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return '$' + integer + '.' + decimal;
+};
+
+function toDecimal(p) {
+  var n = Math.abs(p);
+  var dec = n - Math.floor(n);
+  dec = ( Math.round( dec * 100 ) / 100 ).toString();
+
+  if( dec.split('.').length ) {
+    return dec.split('.')[1];
+  } else return "";
+};
+
 
 
 const columns = [

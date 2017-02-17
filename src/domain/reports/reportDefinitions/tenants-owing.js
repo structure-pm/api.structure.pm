@@ -21,6 +21,7 @@ const AssetManagerReportDef = {
           enum: ["poi", "glenmary", "kinghenry"],
         },
         uniqueItems: true,
+        ui: {widget: 'multiselect'},
       },
     }
   },
