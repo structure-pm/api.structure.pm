@@ -1,5 +1,6 @@
 import Promise from 'bluebird';
 import GeneralListTemplate from './generalListTemplate';
+import GeneralTableTemplate from './generalTableTemplate';
 import GlobalLedger from './globalLedger';
 import AssetManager from './assetManager';
 import ReportDefs from './reportDefinitions';
@@ -7,6 +8,7 @@ import Datasets from './reportData.service';
 
 const _templates = {
   general_list: GeneralListTemplate,
+  general_table: GeneralTableTemplate,
   global_ledger: GlobalLedger,
   asset_manager: AssetManager,
 }
