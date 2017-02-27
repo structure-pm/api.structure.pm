@@ -56,7 +56,7 @@ const AssetManagerReportDef = {
       WHERE
         managedBy = 'alltrade'
         AND active=1
-        AND nickname NOT LIKE '%DNM%'
+        AND (nickname NOT LIKE '%DNM%' OR nickname is null)
       ORDER BY
         COALESCE(nickname, lName, ownerID) ASC`;
 
