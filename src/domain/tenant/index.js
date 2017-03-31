@@ -158,6 +158,9 @@ Tenant.getBalances = function(tenant) {
       balances = group(balances, paymentBalances);
       balances = group(balances, rentAndRecurring);
 
+      // ensure that there is a balance for rent (incomeID=1):
+      balances[1] = balances[1] || {incomeID: 1, type: 'Rent', total: 0}
+
       return [balances, lastLease];
     })
     .then(([balances, lastLease]) => {
