@@ -95,7 +95,8 @@ export function search(query, options) {
 			LEFT JOIN ${tableOwner} own on own.ownerID = COALESCE(page.ownerID, loc.ownerID, grp.ownerID)
     WHERE ${whereClause}
     ORDER BY DATE_FORMAT(first.timeStamp,'%Y-%m-%d') ${sortDir}
-    LIMIT ${limit} OFFSET ${offset}
+    LIMIT ${limit}
+    OFFSET ${offset}
     `;
 
   return db.query(sql);
