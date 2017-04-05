@@ -1,5 +1,5 @@
 
-USE structudev_income;
+USE structu_income;
 
 CREATE TABLE IF NOT EXISTS deposits (
   depID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -8,21 +8,21 @@ CREATE TABLE IF NOT EXISTS deposits (
 );
 
 
-SELECT depID, COUNT(*) FROM (
-SELECT DISTINCT depID, depDate
-FROM
-  structudev_income.iLedger
-WHERE
-  depID IS NOT NULL
-  AND depID != 0
-  AND depDate IS NOT NULL
-  AND depDate > '2016-01-01'
-) a
-GROUP BY depID
-HAVING count(*) > 1
+-- SELECT depID, COUNT(*) FROM (
+-- SELECT DISTINCT depID, depDate
+-- FROM
+--   structudev_income.iLedger
+-- WHERE
+--   depID IS NOT NULL
+--   AND depID != 0
+--   AND depDate IS NOT NULL
+--   AND depDate > '2016-01-01'
+-- ) a
+-- GROUP BY depID
+-- HAVING count(*) > 1
 
 
-INSERT INTO deposits
+INSERT INTO deposits (depID, depDate)
   SELECT DISTINCT depID, depDate
   FROM iLedger
   WHERE
@@ -30,6 +30,7 @@ INSERT INTO deposits
     AND depID != 0
     AND depDate IS NOT NULL
     AND depDate > '2016-01-01'
+;
 
 
 
