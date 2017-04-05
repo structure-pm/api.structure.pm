@@ -41,11 +41,13 @@ Accounting.makeDeposit = function(ownerID, depositDate, deposits) {
   return Promise.all([
     iLedgerDeposits,
     paymentDeposits,
-    DepositRepo.getNextDepID(),
+    // DepositRepo.getNextDepID(),
+    DepositRepo.createDeposit(depositDate),
     db.beginTransaction()
   ]).spread((entries, payments, depID, transaction) => {
 
     return Promise.all([
+
       Promise.map(entries, entry => {
         if (entry.depID) throw new Error(`Entry ${entry.entryID} is already deposited`)
         entry.markDeposited(depID, depositDate);
@@ -92,6 +94,7 @@ Accounting.revertDeposit = function(depositID) {
           })
         }
       })
+      .then(() => DepositRepo.destroyDeposit(depositID, {transaction}))
       .tap(() => db.commit(transaction))
       .catch(err => db.rollback(transaction).throw(err))
 

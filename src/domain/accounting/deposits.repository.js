@@ -199,3 +199,27 @@ Repo.getNextDepID = function() {
     .then(rows => rows[0].lastDepID)
     .then(maxDepID => parseInt(maxDepID) + 1);
 }
+
+Repo.createDeposit = function(depDate) {
+  const depositsTable = db.getPrefix() + '_income.deposits';
+  const query = `INSERT INTO ${depositsTable} (depDate) VALUES (${db.escape(formatDateForDb(depDate))})`;
+  return db.query(query)
+    .then(res => res.insertId);
+}
+
+Repo.destroyDeposit = function(depID, options={}) {
+  const iLedgerTable = db.getPrefix() + '_income.iLedger';
+  const depositsTable = db.getPrefix() + '_income.deposits';
+
+  const selectQuery = `SELECT * FROM ${iLedgerTable} WHERE depID=${db.escape(depID)}`;
+  const deleteQuery = `DELETE FROM ${depositsTable} WHERE depID=${db.escape(depID)}`;
+
+  return db.query(selectQuery, options)
+    .then(rows => {
+      if (rows.length) {
+        throw new Error('Cannot delete a deposit while there are still ledger items within the deposit');
+      }
+
+      return db.query(deleteQuery, options);
+    });
+}
