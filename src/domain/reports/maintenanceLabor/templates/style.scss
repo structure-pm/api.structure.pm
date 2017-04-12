@@ -1,0 +1,12 @@
+.report-wrapper {
+  position: relative;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: #fff;
+  padding: 10px;
+  width: 100%;
+
+  .report-content {
+    min-width: 100%;
+    overflow: auto;
+  }
+}

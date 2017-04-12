@@ -3,6 +3,7 @@ import ProfitLossAccrualDef from './profitloss_accrual';
 import GlobalLedgerDef from './global_ledger';
 import AssetManagerReportDef from './asset_manager';
 import TenantsOwing from './tenants-owing';
+import MaintenanceLabor from './maintenance_labor';
 
 const _reportDefs = {
   [ProfitLossCashDef.name]: ProfitLossCashDef,
@@ -10,6 +11,7 @@ const _reportDefs = {
   [GlobalLedgerDef.name]: GlobalLedgerDef,
   [AssetManagerReportDef.name]: AssetManagerReportDef,
   [TenantsOwing.name]: TenantsOwing,
+  [MaintenanceLabor.name]: MaintenanceLabor,
 };
 
 const ReportDefs = {}
