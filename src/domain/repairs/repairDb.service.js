@@ -39,7 +39,7 @@ export function search(query, options) {
   const whereClause = whereClauses.join(' AND ');
 
 
-  const sql = SQL`SELECT
+  const sql = SQL`SELECT SQL_CALC_FOUND_ROWS
 			page.pageID,
 			page.pageID as JobID,
 			page.parentPageID as parentJobID,
@@ -99,7 +99,21 @@ export function search(query, options) {
     OFFSET ${offset}
     `;
 
-  return db.query(sql);
+  return db.query(sql)
+    .then(rows => {
+      return db.query('SELECT FOUND_ROWS() as found')
+        .then(found => {
+          return [rows, found[0].found]
+        })
+    })
+    .then(([rows, totalRows]) => {
+      // const totalRows = (rows && rows.length) ? rows[0].full_count : 0;
+      return {
+        total_rows: totalRows,
+        count: rows.length,
+        data: rows
+      }
+    })
 }
 
 
