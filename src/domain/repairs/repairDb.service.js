@@ -101,3 +101,14 @@ export function search(query, options) {
 
   return db.query(sql);
 }
+
+
+
+export function getRepairTypes() {
+  const tablePage = `${db.getPrefix()}_log.page`;
+  const sql = `SELECT DISTINCT repairType
+    FROM ${tablePage}
+    ORDER BY repairType`;
+
+  return db.query(sql);
+}

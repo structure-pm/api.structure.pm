@@ -3,7 +3,7 @@ import _pick from 'lodash/pick';
 import {ReadRepair} from '../../domain/repairs';
 
 exports.search = function(req, res, next) {
-  const query = _pick(req.query, [
+  const query = _pick((req.body.filter || {}), [
     'accountID', 'managerID', 'includeComplete',
     'startDate', 'endDate', 'repairType', 'priority',
     'zoneID',
@@ -13,12 +13,14 @@ exports.search = function(req, res, next) {
 
   if (!query.accountID && !query.managerID) {
     const err = new Error('Searcing repairs requires that either an accountID, or managerID be passed as a query parameter.')
+    err.status = 400;
     return next(err);
   }
 
   if (query.startDate) {
     if (!moment(query.startDate).isValid) {
       const err = new Error(`Invalid startDate paramter: ${query.startDate}`);
+      err.status = 400;
       return next(err);
     }
 
@@ -28,6 +30,7 @@ exports.search = function(req, res, next) {
   if (query.endDate) {
     if (!moment(query.endDate).isValid) {
       const err = new Error(`Invalid endDate paramter: ${query.endDate}`);
+      err.status = 400;
       return next(err);
     }
 
@@ -41,4 +44,10 @@ exports.search = function(req, res, next) {
     .then(repairs => res.json(repairs))
     .catch(next);
 
+}
+
+exports.repairTypes = function(req, res, next) {
+  ReadRepair.getRepairTypes()
+    .then(repairTypes => res.json(repairTypes))
+    .catch(next);
 }
