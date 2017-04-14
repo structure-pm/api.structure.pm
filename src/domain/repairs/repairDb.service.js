@@ -18,6 +18,7 @@ export function search(query, options) {
   const tableOwner = `${db.getPrefix()}_assets.owner`;
   const tableInvoicePages = `${db.getPrefix()}_income.invoices_pages`;
 
+  query.active = Number(query.active);
 
   const defaultOptions = {
     limit: 50,
@@ -28,7 +29,6 @@ export function search(query, options) {
 
   const whereClauses = [];
 
-  if (!query.includeComplete) whereClauses.push(`last.status < 5`);
   if (query.accountID) whereClauses.push(`own.ownerID=${db.escape(query.accountID)}`);
   if (query.managerID) whereClauses.push(`own.managedBy=${db.escape(query.managerID)}`);
   if (query.startDate) whereClauses.push(`(last.status != 5 OR DATE_FORMAT(last.timeStamp,'%Y-%m-%d') >= '${query.startDate}')`);
@@ -36,6 +36,20 @@ export function search(query, options) {
   if (query.repairType) whereClauses.push(`page.repairType='${query.repairType}'`);
   if (query.priority) whereClauses.push(`last.priority='${query.priority}'`);
   if (query.zoneID) whereClauses.push(`loc.zoneID='${query.zoneID}'`);
+  if (query.active>=0) {
+    whereClauses.push ((query.active === 0) ? `last.status = 5` : 'last.status != 5');
+  }
+  if (query.search && query.search.length) {
+    const search = [
+      `page.pageID like '%${query.search}%'`,
+      `page.title like '%${query.search}%'`,
+      `own.nickname like '%${query.search}%'`,
+      `COALESCE(loc.shortHand, loc.locationID) like '%${query.search}%'`,
+      `CONCAT_WS(' ', COALESCE(loc.streetNum, u.streetNum), loc.street, loc.city, loc.state, loc.zip) like '%${query.search}%'`,
+    ].join(' OR ');
+    whereClauses.push(`(${search})`);
+  }
+
   const whereClause = whereClauses.join(' AND ');
 
 
@@ -111,6 +125,7 @@ export function search(query, options) {
       return {
         total_rows: totalRows,
         count: rows.length,
+        offset: offset,
         data: rows
       }
     })

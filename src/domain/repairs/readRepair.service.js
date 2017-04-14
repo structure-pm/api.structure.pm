@@ -2,8 +2,8 @@
 
 export const ReadRepair = {
   useDb: function(dbService) {this.dbService = dbService},
-  search: function(query) {
-    return this.dbService.search(query);
+  search: function(query, options) {
+    return this.dbService.search(query, options);
   },
   getRepairTypes: function() {
     return this.dbService.getRepairTypes()

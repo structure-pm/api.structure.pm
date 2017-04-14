@@ -6,10 +6,9 @@ exports.search = function(req, res, next) {
   const query = _pick((req.body.filter || {}), [
     'accountID', 'managerID', 'includeComplete',
     'startDate', 'endDate', 'repairType', 'priority',
-    'zoneID',
+    'zoneID', 'active', 'search'
   ]);
-  const options = _pick(req.query, ['limit', 'offset', 'sortDir']);
-
+  const options = _pick(req.body.options, ['limit', 'offset', 'sortDir']);
 
   if (!query.accountID && !query.managerID) {
     const err = new Error('Searcing repairs requires that either an accountID, or managerID be passed as a query parameter.')
