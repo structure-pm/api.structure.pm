@@ -6,7 +6,7 @@ exports.search = function(req, res, next) {
   const query = _pick((req.body.filter || {}), [
     'accountID', 'managerID', 'includeComplete',
     'startDate', 'endDate', 'repairType', 'priority',
-    'zoneID', 'active', 'search'
+    'zoneID', 'active', 'search', 'billed'
   ]);
   const options = _pick(req.body.options, ['limit', 'offset', 'sortDir']);
 
@@ -48,5 +48,17 @@ exports.search = function(req, res, next) {
 exports.repairTypes = function(req, res, next) {
   ReadRepair.getRepairTypes()
     .then(repairTypes => res.json(repairTypes))
+    .catch(next);
+}
+
+exports.listZones = function(req, res, next) {
+  const {managerID} = req.query;
+
+  if (!managerID) {
+    return res.json([]);
+  }
+
+  ReadRepair.getMaintenanceZones(managerID)
+    .then(zones => res.json(zones))
     .catch(next);
 }

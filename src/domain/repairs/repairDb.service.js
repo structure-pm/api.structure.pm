@@ -1,4 +1,5 @@
 import * as db from '../../db';
+import isNil from 'lodash/isNil';
 
 
 function SQL (template, ...expressions) {
@@ -15,6 +16,7 @@ export function search(query, options) {
   const tableLease = `${db.getPrefix()}_assets.lease`;
   const tableUnit = `${db.getPrefix()}_assets.unit`;
   const tableLocation = `${db.getPrefix()}_assets.location`;
+  const tableZone = `${db.getPrefix()}_assets.zone`;
   const tableOwner = `${db.getPrefix()}_assets.owner`;
   const tableInvoicePages = `${db.getPrefix()}_income.invoices_pages`;
 
@@ -35,7 +37,20 @@ export function search(query, options) {
   if (query.endDate) whereClauses.push(`DATE_FORMAT(first.timeStamp,'%Y-%m-%d') <= '${query.endDate}'`);
   if (query.repairType) whereClauses.push(`page.repairType='${query.repairType}'`);
   if (query.priority) whereClauses.push(`last.priority='${query.priority}'`);
-  if (query.zoneID) whereClauses.push(`loc.zoneID='${query.zoneID}'`);
+  if (query.billed) {
+    if (query.billed === "-1") {
+      whereClauses.push(`page.billed IS NULL`)
+    } else {
+      whereClauses.push(`page.billed=${db.escape(Number(query.billed))}`)
+    }
+  }
+  if (query.zoneID) {
+    if (Number(query.zoneID) < 0) {
+      whereClauses.push(`loc.zoneID IS NULL`);
+    } else {
+      whereClauses.push(`loc.zoneID=${db.escape(Number(query.zoneID))}`);
+    }
+  }
   if (query.active>=0) {
     whereClauses.push ((query.active === 0) ? `last.status = 5` : 'last.status != 5');
   }
@@ -51,7 +66,6 @@ export function search(query, options) {
   }
 
   const whereClause = whereClauses.join(' AND ');
-
 
   const sql = SQL`SELECT SQL_CALC_FOUND_ROWS
 			page.pageID,
@@ -89,6 +103,7 @@ export function search(query, options) {
 			COALESCE(loc.shortHand, loc.locationID) as locationName,
 			loc.offsiteRepair as offsite,
 			loc.zoneID,
+      zone.name as zoneName,
 			CONCAT_WS(' ', COALESCE(loc.streetNum, u.streetNum), loc.street, loc.city, loc.state, loc.zip) as address,
 			u.unitID,
 			COALESCE(u.suiteNum, u.streetNum) as suiteNum,
@@ -104,22 +119,21 @@ export function search(query, options) {
 		    and lse.endDate >= first.timeStamp
 		  LEFT JOIN ${tableUnit} u on COALESCE(page.unitID, lse.unitID) = u.unitID
 		  LEFT JOIN ${tableLocation} loc on COALESCE(page.locationID, u.locationID) = loc.locationID
+		  LEFT JOIN ${tableZone} zone on zone.zoneID = loc.zoneID
 		  LEFT JOIN ${tableInvoicePages} inv on inv.pageID = page.pageID
 			LEFT JOIN (SELECT DISTINCT groupID, ownerID FROM ${tableLocation} WHERE groupID IS NOT NULL) as grp on page.groupID = grp.groupID
 			LEFT JOIN ${tableOwner} own on own.ownerID = COALESCE(page.ownerID, loc.ownerID, grp.ownerID)
     WHERE ${whereClause}
     ORDER BY DATE_FORMAT(first.timeStamp,'%Y-%m-%d') ${sortDir}
-    LIMIT ${limit}
-    OFFSET ${offset}
     `;
 
-  return db.query(sql)
-    .then(rows => {
-      return db.query('SELECT FOUND_ROWS() as found')
-        .then(found => {
-          return [rows, found[0].found]
-        })
-    })
+    const limitClause = `LIMIT ${limit} OFFSET ${offset}`;
+
+  return Promise.all([
+    db.query(`${sql} ${limitClause}`),
+    db.query(sql),
+  ])
+    .then(([rows, noLimit]) => [rows, noLimit.length])
     .then(([rows, totalRows]) => {
       // const totalRows = (rows && rows.length) ? rows[0].full_count : 0;
       return {
@@ -140,4 +154,22 @@ export function getRepairTypes() {
     ORDER BY repairType`;
 
   return db.query(sql);
+}
+
+export function getMaintenanceZones(managerID) {
+  const tableZone = `${db.getPrefix()}_assets.zone`;
+
+  return Promise.resolve()
+    .then(() => {
+      if (!managerID) {
+        throw new Error(`getMaintenanceZones() is missing 'managerID'`)
+      }
+
+      const sql = `SELECT *
+        FROM ${tableZone}
+        WHERE managerID = ${db.escape(managerID)}`;
+
+      return db.query(sql);
+    })
+
 }

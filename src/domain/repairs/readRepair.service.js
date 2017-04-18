@@ -8,6 +8,9 @@ export const ReadRepair = {
   getRepairTypes: function() {
     return this.dbService.getRepairTypes()
       .then(rows => rows.map(row => row.repairType).filter(rt => rt))
-  }
+  },
+  getMaintenanceZones: function(managerID) {
+    return this.dbService.getMaintenanceZones(managerID);
+  },
 
 }
