@@ -3,6 +3,7 @@ import GeneralListTemplate from './generalListTemplate';
 import GeneralTableTemplate from './generalTableTemplate';
 import GlobalLedger from './globalLedger';
 import AssetManager from './assetManager';
+import MaintenanceLabor from './maintenanceLabor';
 import ReportDefs from './reportDefinitions';
 import Datasets from './reportData.service';
 
@@ -11,6 +12,7 @@ const _templates = {
   general_table: GeneralTableTemplate,
   global_ledger: GlobalLedger,
   asset_manager: AssetManager,
+  maintenance_labor: MaintenanceLabor,
 }
 
 export function runReport(reportName, userParameters={}, userConfiguration={}, reportFormat='html', data=null) {
