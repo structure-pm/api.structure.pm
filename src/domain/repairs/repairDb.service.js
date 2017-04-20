@@ -1,4 +1,5 @@
 import * as db from '../../db';
+import moment from 'moment';
 import isNil from 'lodash/isNil';
 
 
@@ -29,7 +30,11 @@ export function search(query, options) {
   }
   const {limit, offset, sortDir} = Object.assign({}, defaultOptions, options);
 
-  const whereClauses = [];
+  const whereClauses = [
+    'own.active = 1',
+    `page.pageType = 'repair'`,
+    `(own.nickname IS NULL OR own.nickname NOT LIKE '%DNM%')`,
+  ];
 
   if (query.accountID) whereClauses.push(`own.ownerID=${db.escape(query.accountID)}`);
   if (query.managerID) whereClauses.push(`own.managedBy=${db.escape(query.managerID)}`);
@@ -37,6 +42,7 @@ export function search(query, options) {
   if (query.endDate) whereClauses.push(`DATE_FORMAT(first.timeStamp,'%Y-%m-%d') <= '${query.endDate}'`);
   if (query.repairType) whereClauses.push(`page.repairType='${query.repairType}'`);
   if (query.priority) whereClauses.push(`last.priority='${query.priority}'`);
+  if (query.assignedTo) whereClauses.push(`last.forUser=${db.escape(query.assignedTo)}`);
   if (query.billed) {
     if (query.billed === "-1") {
       whereClauses.push(`page.billed IS NULL`)
@@ -172,4 +178,77 @@ export function getMaintenanceZones(managerID) {
       return db.query(sql);
     })
 
+}
+
+export function getMaintenanceStaff(managerID) {
+  const tableUser = `${db.getPrefix()}_httpauth.user_auth`;
+  const tableAccess = `${db.getPrefix()}_httpauth.user_access`;
+
+  return Promise.resolve()
+    .then(() => {
+      if (!managerID) {
+        throw new Error(`getMaintenanceZones() is missing 'managerID'`)
+      }
+
+
+      const sql = `SELECT
+      		user.username,
+      		user.firstName,
+      		user.lastname
+      	FROM ${tableUser} user
+      		JOIN ${tableAccess} acc on user.username = acc.username
+      	WHERE
+      		acc.accountID=${db.escape(managerID)}
+      	ORDER BY
+      		user.firstName, user.lastName`;
+
+      return db.query(sql);
+    })
+}
+
+export function getEntriesForRepair(repairId) {
+  const tableEntries = `${db.getPrefix()}_log.entry`;
+  const tableUser = `${db.getPrefix()}_httpauth.user_auth`;
+
+
+  if (!isFinite(Number(repairId))) return Promise.reject(new Error(`Unrecognized repairId. received '${repairId}'`));
+
+  const sql = `SELECT
+      ent.*,
+      CONCAT_WS(' ', user.firstName, user.lastname) as fullName
+    FROM ${tableEntries} ent
+      LEFT JOIN ${tableUser} user on user.username = ent.userName
+    WHERE ent.pageID=${db.escape(Number(repairId))}
+    ORDER BY ent.timeStamp ASC
+  `;
+
+  return db.query(sql);
+}
+
+export function createRepairEntry(entryData) {
+	const entryTable = `${db.getPrefix()}_log.entry`;
+  const pageTable = `${db.getPrefix()}_log.page`;
+
+  const sql = `INSERT INTO ${entryTable} (
+    pageId, userName, forUser, entry, timeStamp, startDate, endDate,
+  	priority, status, taskStart, taskEnd
+  ) VALUES (
+    ${db.escape(entryData.repairId)},
+    ${db.escape(entryData.user)},
+    ${db.escape(entryData.forUser)},
+    ${db.escape(entryData.entry)},
+    ${db.escape(moment().format())},
+    ${db.escape(entryData.startDate)},
+    ${db.escape(entryData.endDate)},
+    ${db.escape(entryData.priority)},
+    ${db.escape(entryData.status)},
+    ${db.escape(entryData.taskStart)},
+    ${db.escape(entryData.taskEnd)}
+  )`;
+
+  return db.query(sql)
+    .then(res => {
+      const sql = `UPDATE ${pageTable} SET lastEntry = ${res.insertId} WHERE pageID=${entryData.repairId}`;
+      return db.query(sql);
+    })
 }

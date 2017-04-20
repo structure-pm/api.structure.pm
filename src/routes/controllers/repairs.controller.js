@@ -1,4 +1,5 @@
 import moment from 'moment';
+import isNil from 'lodash/isNil';
 import _pick from 'lodash/pick';
 import {ReadRepair} from '../../domain/repairs';
 
@@ -6,7 +7,7 @@ exports.search = function(req, res, next) {
   const query = _pick((req.body.filter || {}), [
     'accountID', 'managerID', 'includeComplete',
     'startDate', 'endDate', 'repairType', 'priority',
-    'zoneID', 'active', 'search', 'billed'
+    'zoneID', 'active', 'search', 'billed', 'assignedTo'
   ]);
   const options = _pick(req.body.options, ['limit', 'offset', 'sortDir']);
 
@@ -61,4 +62,46 @@ exports.listZones = function(req, res, next) {
   ReadRepair.getMaintenanceZones(managerID)
     .then(zones => res.json(zones))
     .catch(next);
+}
+
+/**
+ * Retrieve a list of users for a given managerID
+ */
+exports.listStaff = function(req, res, next) {
+  const {managerID} = req.query;
+
+  if (!managerID) {
+    return res.json([]);
+  }
+
+  ReadRepair.getMaintenanceStaff(managerID)
+    .then(staff => res.json(staff))
+    .catch(next);
+}
+
+/**
+ * Retrieve a list of entries for a given pageId
+ */
+exports.entriesForRepair = function(req, res, next) {
+  const {repairId} = req.params;
+
+  ReadRepair.getEntriesForRepair(repairId)
+    .then(entries => res.json(entries))
+    .catch(next);
+}
+
+/**
+ * Creates an entry in a repair
+ */
+exports.createRepairEntry = function(req, res, next) {
+  const {repairId} = req.params;
+
+  const entryData = Object.assign({ repairId }, req.body);
+  entryData.repairId = Number(entryData.repairId);
+  entryData.priority = (!isNil(entryData.priority)) ? Number(entryData.priority) : null;
+
+  ReadRepair.createRepairEntry(entryData)
+    .then(() => res.status(201).json({message: 'ok'}))
+    .catch(next);
+
 }

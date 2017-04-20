@@ -12,5 +12,14 @@ export const ReadRepair = {
   getMaintenanceZones: function(managerID) {
     return this.dbService.getMaintenanceZones(managerID);
   },
+  getMaintenanceStaff: function(managerID) {
+    return this.dbService.getMaintenanceStaff(managerID);
+  },
+  getEntriesForRepair: function(repairId) {
+    return this.dbService.getEntriesForRepair(repairId);
+  },
+  createRepairEntry: function(entryData) {
+    return this.dbService.createRepairEntry(entryData);
+  },
 
 }
