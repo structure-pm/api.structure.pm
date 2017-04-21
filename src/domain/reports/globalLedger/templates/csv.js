@@ -28,7 +28,8 @@ const headerTemplate = [
   'glAccountName',
   'leaseID',
   'comment',
-  'method'
+  'method',
+  'invoiceID'
 ].join(',');
 
 const lineTemplate = [
@@ -47,6 +48,7 @@ const lineTemplate = [
   '{{{leaseID}}}',
   '{{{comment}}}',
   '{{{method}}}',
+  '{{{invoiceID}}}',
 ].map(line => `"${line}"`).join(',');
 
 const bodyTemplate = `{{#each this}}${lineTemplate}\n{{/each}}`;

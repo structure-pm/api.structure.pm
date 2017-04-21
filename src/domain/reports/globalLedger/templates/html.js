@@ -46,6 +46,7 @@ export const headerTemplate = `
     <th>Account</th>
     <th>comment</th>
     <th>method</th>
+    <th>InvoiceID</th>
   </tr>
 </thead>
 `;
@@ -64,6 +65,7 @@ export const lineTemplate = `
     <td>{{{glAccountName}}}</td>
     <td>{{comment}}</td>
     <td>{{method}}</td>
+    <td>{{invoiceID}}</td>
   </tr>
 `;
 

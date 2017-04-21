@@ -35,7 +35,8 @@ export default function gl(options) {
         mgl.name as glAccountName,
         lse.leaseID,
         il.comment,
-        NULL as method
+        NULL as method,
+        il.invoiceID as invoiceID
       FROM ${dbPrefix}_income.iLedger il
         LEFT JOIN ${dbPrefix}_income.income inc on inc.incomeID = il.incomeID
         LEFT JOIN ${dbPrefix}_log.mapGL mgl on mgl.mapID = inc.mapID
@@ -74,7 +75,8 @@ export default function gl(options) {
         mgl.name as glAccountName,
         NULL as leaseID,
         el.comment,
-        COALESCE(el.checkID, el.payMethod) as method
+        COALESCE(el.checkID, el.payMethod) as method,
+        el.invoiceID as invoiceID
       FROM
         ${dbPrefix}_expenses.eLedger el
         LEFT JOIN ${dbPrefix}_assets.unit u on u.unitID = el.unitID
