@@ -78,22 +78,17 @@ Accounting.revertDeposit = function(depositID) {
   ])
     .spread((payments, incomes, transaction) => {
 
-      return Promise.try(() => {
-        // If we have a receivedPayment object, that's the only object we need
-        // to update since revertDeposit and save will update the child income
-        // lines automatically
-        if (payments.length) {
-          return Promise.map(payments, payment => {
-            payment.revertDeposit();
-            return PayRepo.save(payment, {transaction});
-          })
-        } else {
-          return Promise.map(incomes, income => {
-            income.revertDeposit();
-            return IncomeRepo.save(income, {transaction})
-          })
-        }
-      })
+      return Promise.all([
+        Promise.map((payments || []), payment => {
+          payment.revertDeposit();
+          return PayRepo.save(payment, {transaction});
+        }),
+
+        Promise.map((incomes || []), income => {
+          income.revertDeposit();
+          return IncomeRepo.save(income, {transaction})
+        })
+      ])
       .then(() => DepositRepo.destroyDeposit(depositID, {transaction}))
       .tap(() => db.commit(transaction))
       .catch(err => db.rollback(transaction).throw(err))
