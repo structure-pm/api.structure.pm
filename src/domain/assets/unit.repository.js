@@ -38,6 +38,12 @@ Unit.find = function(where={}, options={}) {
     if (where.locationID) whereClauses.push(`unit.locationID=${db.escape(where.locationID)}`);
     if (where.ownerID) whereClauses.push(`location.ownerID=${db.escape(where.ownerID)}`);
     if (where.zoneID) whereClauses.push(`location.zoneID=${db.escape(where.zoneID)}`);
+    if (where.zip) {
+      const zipList = (Array.isArray(where.zip) ? where.zip : [where.zip])
+        .map(z => db.escape(z))
+        .join(',')
+      whereClauses.push(`location.zip in (${zipList})`)
+    }
     yesNoFields.forEach(fld => {
       if (where.hasOwnProperty(fld)) {
         const q = (where[fld])

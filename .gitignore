@@ -4,3 +4,4 @@ npm-debug.log
 *.log
 gcloud-credentials.json
 uploads
+.DS_Store

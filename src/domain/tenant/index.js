@@ -158,6 +158,8 @@ Tenant.getBalances = function(tenant) {
       balances = group(balances, paymentBalances);
       balances = group(balances, rentAndRecurring);
 
+      console.log({feeAdjBalances, paymentBalances, rentAndRecurring});
+
       // ensure that there is a balance for rent (incomeID=1):
       balances[1] = balances[1] || {incomeID: 1, type: 'Rent', total: 0}
 
@@ -172,6 +174,8 @@ Tenant.getBalances = function(tenant) {
         .filter(f => f > 0)
         .reduce((sum, f) => sum + f, 0);
 
+      console.log(balances)
+      console.log({totalDue, totalRent, currentRent, previousRent, fees });
       return {totalDue, totalRent, currentRent, previousRent, fees };
     })
 
